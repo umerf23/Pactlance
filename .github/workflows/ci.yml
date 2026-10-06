@@ -1,0 +1,29 @@
+name: Foundation checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+  program-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.90.0 --profile minimal --component rustfmt
+      - name: Check formatting
+        working-directory: contracts
+        run: cargo +1.90.0 fmt --all --check
+      - name: Native program unit tests (not validator integration)
+        working-directory: contracts
+        run: cargo +1.90.0 test --workspace --locked

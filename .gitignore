@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+coverage/
+.env*
+!.env.example
+*.tsbuildinfo
+contracts/target/
+.anchor/
+test-ledger/
+*-keypair.json
+.DS_Store

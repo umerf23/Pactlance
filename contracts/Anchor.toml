@@ -1,0 +1,13 @@
+[toolchain]
+anchor_version = "0.32.2"
+solana_version = "2.3.0"
+[features]
+resolution = true
+skip-lint = false
+[programs.localnet]
+pactlance = "Fg6PaFpoGXkYsidMpWxTWqkZq7FEfcYkgMQhgqJM6dS9"
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+[scripts]
+test = "cargo test --workspace"

@@ -1,0 +1,8 @@
+node_modules
+.next
+contracts/target
+package-lock.json
+contracts/Cargo.lock
+docs/original-blueprint.md
+docs/build-phases.md
+docs/phase-1-workbook.md
