@@ -10,3 +10,6 @@ contracts/target/
 test-ledger/
 *-keypair.json
 .DS_Store
+
+# Supabase CLI local cache
+supabase/.temp/

@@ -69,6 +69,12 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("supabase/migrations/202610070001_phase3.sql", "utf8"),
   );
+  await db.exec(
+    readFileSync(
+      "supabase/migrations/20261007050111_private_auth_helpers.sql",
+      "utf8",
+    ),
+  );
   await save(1);
 }, 30000);
 afterAll(async () => {

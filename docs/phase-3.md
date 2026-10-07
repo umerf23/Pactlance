@@ -4,7 +4,7 @@ Implemented: wallet-standard connection, Supabase Solana Web3 sign-in with SSR s
 
 ## Backend activation
 
-1. Apply `supabase/migrations/202610070001_phase3.sql` to the project's Supabase database. The migration creates new tables; use a new project or review existing schema conflicts first.
+1. Apply every SQL file in `supabase/migrations` in filename order to the project's Supabase database. The migration creates new tables; use a new project or review existing schema conflicts first.
 2. Enable Solana Web3 authentication in Supabase Auth. Allow the exact production site origin, plus localhost for local development. Avoid allowing arbitrary preview origins.
 3. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (legacy anon key is also supported), and `SUPABASE_SERVICE_ROLE_KEY` in the server environment. The service-role key must never use a `NEXT_PUBLIC_` prefix or be committed.
 4. Redeploy after setting public build-time variables.
@@ -27,3 +27,7 @@ Hosted two-wallet end-to-end verification remains pending until Supabase is prov
 ## Phase boundary
 
 These are off-chain test agreements. No funds are moved. The token mint and escrow program are deliberately unset, and the signed message explicitly requires fresh acceptance once those addresses are specified. Phase 4 adds the on-chain program and acceptance/funding transaction flow, with one separate vault per milestone and only one active funded milestone. No reduction to a one-milestone project model has been made.
+
+## Hosted backend status
+
+The Pactlance Supabase project was created in `ap-south-1` on the Free plan. Both migrations are applied, all five tables have RLS enabled, and the hosted security advisor reports no findings. Internal authorization helpers are in the non-exposed `private` schema with anonymous execution explicitly revoked. Dashboard authentication setup and Vercel environment configuration remain pending.
