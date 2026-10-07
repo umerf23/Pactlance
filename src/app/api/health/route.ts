@@ -1,7 +1,7 @@
 export function GET() {
   return Response.json({
     service: "pactlance",
-    phase: 2,
+    phase: 3,
     mode: "preview",
     paymentsEnabled: false,
   });

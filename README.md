@@ -1,3 +1,7 @@
+# Phase 3 update
+
+Wallet sign-in, private projects, multi-milestone agreements and version-bound signatures are implemented. See [Phase 3 setup and verification](docs/phase-3.md) for backend activation and remaining hosted verification. Escrow funding is Phase 4.
+
 # Pactlance
 
 Milestone payment protection for Pakistani freelancers and overseas clients.

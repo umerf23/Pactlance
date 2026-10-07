@@ -45,7 +45,10 @@ export function ProjectPreview() {
       <main>
         <header>
           <span>
-            Workspace <span className="slash">/</span> Projects
+            Workspace <span className="slash">/</span> Projects{" "}
+            <Link href="/workspace" className="preview-workspace-link">
+              Open workspace ↗
+            </Link>
           </span>
           <span className="network">
             <i /> Devnet preview
