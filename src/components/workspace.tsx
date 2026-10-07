@@ -61,7 +61,12 @@ function inputFromDetail(detail: ProjectDetail): AgreementInput {
   };
 }
 export function Workspace() {
-  const { publicKey, signMessage, disconnect } = useWallet();
+  const {
+    publicKey,
+    signMessage,
+    signIn: walletSignIn,
+    disconnect,
+  } = useWallet();
   const address = publicKey?.toBase58();
   const [session, setSession] = useState<Session | null>(null);
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
@@ -129,12 +134,54 @@ export function Workspace() {
     setBusy(true);
     try {
       const supabase = browserSupabase();
-      const { error } = await supabase.auth.signInWithWeb3({
-        chain: "solana",
-        wallet: { publicKey, signMessage },
-        statement:
-          "Sign in to Pactlance. This verifies wallet ownership and does not authorize a payment.",
-      });
+      const statement =
+        "Sign in to Pactlance. This verifies wallet ownership and does not authorize a payment.";
+      const url = new URL(window.location.href);
+      const nonce = crypto.randomUUID().replaceAll("-", "");
+      const issuedAt = new Date().toISOString();
+      const credentials = walletSignIn
+        ? await (async () => {
+            const result = await walletSignIn({
+              domain: url.host,
+              address: publicKey.toBase58(),
+              uri: url.href,
+              version: "1",
+              chainId: "solana:devnet",
+              nonce,
+              issuedAt,
+              statement,
+            });
+            if (result.account.address !== publicKey.toBase58()) {
+              throw new Error(
+                "Wallet account changed. Reconnect and sign in again.",
+              );
+            }
+            return {
+              chain: "solana" as const,
+              message: new TextDecoder().decode(result.signedMessage),
+              signature: new Uint8Array(result.signature),
+            };
+          })()
+        : await (async () => {
+            const message = [
+              `${url.host} wants you to sign in with your Solana account:`,
+              publicKey.toBase58(),
+              "",
+              statement,
+              "",
+              `URI: ${url.href}`,
+              "Version: 1",
+              "Chain ID: solana:devnet",
+              `Nonce: ${nonce}`,
+              `Issued At: ${issuedAt}`,
+            ].join("\n");
+            return {
+              chain: "solana" as const,
+              message,
+              signature: await signMessage(new TextEncoder().encode(message)),
+            };
+          })();
+      const { error } = await supabase.auth.signInWithWeb3(credentials);
       if (error) throw error;
       await refreshSession();
       setDetail(null);
