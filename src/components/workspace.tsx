@@ -146,7 +146,6 @@ export function Workspace() {
               address: publicKey.toBase58(),
               uri: url.href,
               version: "1",
-              chainId: "solana:devnet",
               nonce,
               issuedAt,
               statement,
@@ -171,7 +170,6 @@ export function Workspace() {
               "",
               `URI: ${url.href}`,
               "Version: 1",
-              "Chain ID: solana:devnet",
               `Nonce: ${nonce}`,
               `Issued At: ${issuedAt}`,
             ].join("\n");
