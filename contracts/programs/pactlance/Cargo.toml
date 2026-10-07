@@ -1,7 +1,7 @@
 [package]
 name = "pactlance"
 version = "0.1.0"
-description = "Pactlance development foundation; no escrow instructions yet"
+description = "Pactlance development foundation; sequential milestone escrow"
 edition = "2021"
 [lib]
 crate-type = ["cdylib", "lib"]
@@ -12,12 +12,13 @@ cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-idl-build = ["anchor-lang/idl-build"]
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-debug = []
 custom-heap = []
 custom-panic = []
 [dependencies]
 anchor-lang = "=0.32.2"
+anchor-spl = { version = "=0.32.2", default-features = false, features = ["token", "token_2022"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
