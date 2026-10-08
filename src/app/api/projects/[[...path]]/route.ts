@@ -15,7 +15,8 @@ import {
   validateFutureDeadlines,
   acceptanceMessage,
 } from "@/lib/agreements/schema";
-import { agreementCommitment } from "@/lib/agreements/crypto";
+import { reconcileProject } from "@/lib/escrow/server/reconcile";
+import { agreementCommitment, canonicalJSON } from "@/lib/agreements/crypto";
 import { verifyWalletSignature } from "@/lib/agreements/signatures";
 type Context = { params: Promise<{ path?: string[] }> };
 async function projectForUser(
@@ -172,18 +173,38 @@ async function mutate(request: Request, context: Context, revision: boolean) {
         403,
         "Your wallet must be one of the two participants.",
       );
-    try {
-      validateFutureDeadlines(input);
-    } catch (e) {
-      throw new ApiError(400, (e as Error).message);
-    }
+    let settledPrefix = 0;
     let id = randomUUID();
     let version = 1;
     if (revision) {
       const existing = await projectForUser(path[0], auth);
       id = existing.id;
-      if (existing.locked)
+      if (
+        process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID &&
+        process.env.NEXT_PUBLIC_TEST_TOKEN_MINT
+      ) {
+        const { snapshot } = await reconcileProject(id);
+        if (snapshot.state?.active || snapshot.state?.cancelled)
+          throw new ApiError(
+            409,
+            "Active or cancelled escrow terms cannot be changed.",
+          );
+        settledPrefix = snapshot.state?.next ?? 0;
+        const revised = makeTerms(input, id, existing.current_version + 1);
+        if (revised.milestones.length <= settledPrefix)
+          throw new ApiError(
+            400,
+            "Keep settled history and at least one future milestone.",
+          );
+        for (let i = 0; i < settledPrefix; i++)
+          if (
+            canonicalJSON(revised.milestones[i]) !==
+            canonicalJSON(snapshot.agreement.terms.milestones[i])
+          )
+            throw new ApiError(400, "Settled milestone terms cannot change.");
+      } else if (existing.locked) {
         throw new ApiError(409, "Funded terms cannot be changed.");
+      }
       if (existing.current_version !== parsed.data.expectedVersion)
         throw new ApiError(
           409,
@@ -198,6 +219,14 @@ async function mutate(request: Request, context: Context, revision: boolean) {
           "Participant wallets cannot be changed. Create a new project.",
         );
       version = existing.current_version + 1;
+    }
+    try {
+      validateFutureDeadlines({
+        ...input,
+        milestones: input.milestones.slice(settledPrefix),
+      });
+    } catch (e) {
+      throw new ApiError(400, (e as Error).message);
     }
     const terms = makeTerms(input, id, version);
     const salt = randomBytes(32).toString("hex");

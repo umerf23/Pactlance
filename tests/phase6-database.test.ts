@@ -39,6 +39,8 @@ beforeAll(async () => {
     "202610070001_phase3.sql",
     "20261007050111_private_auth_helpers.sql",
     "20261008045813_phase6_evidence_operations.sql",
+    "20261008054824_phase7_reconciliation.sql",
+    "20261008060103_phase7_worker_hardening.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await admin();
@@ -212,4 +214,121 @@ it("keeps support separate and receipts private; rejects fabricated cache and se
   await expect(db.exec("select * from evidence")).rejects.toThrow(
     /permission denied/,
   );
+});
+function chainSnapshot(slot: number) {
+  const a = {
+    terms: {
+      projectId: project,
+      version: 2,
+      escrowProgram: wallets[4],
+      token: { mint: wallets[5] },
+      reviewerWallet: wallets[2],
+      backupReviewerWallet: wallets[3],
+    },
+    commitment: "2".repeat(64),
+  };
+  return {
+    slot,
+    bindings: [a],
+    agreement: a,
+    state: {
+      clientAccepted: true,
+      freelancerAccepted: true,
+      next: 0,
+      active: true,
+      cancelled: false,
+    },
+    milestones: [
+      {
+        index: 0,
+        agreementVersion: 2,
+        chainAddress: "verified-chain",
+        status: 1,
+        amount: "100",
+        clientRefunded: "0",
+        freelancerPaid: "0",
+        deliveryDeadline: "2000000000",
+        reviewDeadline: "0",
+        backupAt: "0",
+        submissionCommitment: null,
+        disputeCommitment: null,
+      },
+    ],
+  };
+}
+it("keeps reconciliation slot-ordered and deployment bindings immutable", async () => {
+  await admin();
+  const run = (s: unknown) =>
+    db.query<{ reconcile_escrow: boolean }>(
+      "select reconcile_escrow($1,$2::jsonb)",
+      [project, JSON.stringify(s)],
+    );
+  expect((await run(chainSnapshot(200))).rows[0].reconcile_escrow).toBe(true);
+  expect((await run(chainSnapshot(199))).rows[0].reconcile_escrow).toBe(false);
+  const changed = chainSnapshot(201);
+  changed.bindings[0].commitment = "b".repeat(64);
+  await expect(run(changed)).rejects.toThrow(/immutable binding conflict/);
+  const rebound = chainSnapshot(201);
+  rebound.agreement.terms.escrowProgram = wallets[3];
+  await expect(run(rebound)).rejects.toThrow(
+    /deployment binding cannot change/,
+  );
+  expect(
+    (
+      await db.query<{ finalized_slot: number }>(
+        "select finalized_slot from project_chain_cache where project_id=$1",
+        [project],
+      )
+    ).rows[0].finalized_slot,
+  ).toBe(200);
+});
+it("denies browser outbox/cursor access and privileged reconciliation", async () => {
+  await user(0);
+  expect(await count("escrow_bindings")).toBe(1);
+  for (const table of ["claim_outbox", "reconciliation_cursors"])
+    await expect(db.exec(`select * from ${table}`)).rejects.toThrow(
+      /permission denied/,
+    );
+  await expect(
+    db.query("select reconcile_escrow($1,$2::jsonb)", [
+      project,
+      JSON.stringify(chainSnapshot(201)),
+    ]),
+  ).rejects.toThrow(/permission denied/);
+  await user(4);
+  expect(await count("escrow_bindings")).toBe(0);
+});
+it("advances history cursors using compare-and-swap without stale regression", async () => {
+  await admin();
+  const move = (
+    expected: string | null,
+    before: string | null,
+    next: string | null,
+    scan: string | null,
+    head: string | null,
+  ) =>
+    db.query<{ advance_history_cursor: boolean }>(
+      "select advance_history_cursor($1,$2,$3,$4,$5,$6)",
+      [project, expected, before, next, scan, head],
+    );
+  expect(
+    (await move(null, null, null, "page-1", "head-1")).rows[0]
+      .advance_history_cursor,
+  ).toBe(true);
+  expect(
+    (await move(null, null, "stale", null, null)).rows[0]
+      .advance_history_cursor,
+  ).toBe(false);
+  expect(
+    (await move(null, "page-1", "head-1", null, null)).rows[0]
+      .advance_history_cursor,
+  ).toBe(true);
+  expect(
+    (
+      await db.query<{ last_signature: string }>(
+        "select last_signature from reconciliation_cursors where project_id=$1",
+        [project],
+      )
+    ).rows[0].last_signature,
+  ).toBe("head-1");
 });

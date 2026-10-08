@@ -18,7 +18,12 @@
     "test:program": "cargo test --manifest-path contracts/Cargo.toml",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:escrow": "vitest run integration"
+    "test:escrow": "vitest run integration",
+    "devnet:preflight": "node --env-file-if-exists=.env.local scripts/devnet-preflight.mjs",
+    "worker": "node --env-file-if-exists=.env.local scripts/worker-loop.mjs",
+    "deploy:devnet": "node --env-file-if-exists=.env.local scripts/deploy-devnet.mjs",
+    "mint:test": "node --env-file-if-exists=.env.local scripts/mint-test-tokens.mjs",
+    "test:devnet": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run devnet"
   },
   "dependencies": {
     "@anchor-lang/core": "0.32.2",

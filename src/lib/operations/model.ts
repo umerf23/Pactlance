@@ -18,6 +18,12 @@ export interface MilestoneCache {
   finalized_slot: number;
 }
 export interface TransactionEvent {
+  amount_units?: string | null;
+  client_recipient?: string | null;
+  freelancer_recipient?: string | null;
+  network?: "devnet";
+  client_amount_units?: string | null;
+  freelancer_amount_units?: string | null;
   project_id: string;
   signature: string;
   milestone_index: number | null;

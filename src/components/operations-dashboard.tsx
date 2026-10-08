@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { EscrowPanel } from "./escrow-panel";
 import { operationalAPI, EvidencePanel } from "./evidence-panel";
 import {
   explorerURL,
@@ -173,8 +174,15 @@ export function OperationsDashboard({
                 key={`${t.signature}:${t.event_kind}`}
               >
                 <span>
-                  {t.event_kind} · {t.status}
+                  {t.event_kind} · {t.status} · {t.network ?? "devnet"}
                 </span>
+                <small>
+                  Obligation: {t.amount_units ?? "—"} TEST base units. Client:{" "}
+                  {t.client_recipient ?? "—"}; freelancer:{" "}
+                  {t.freelancer_recipient ?? "—"}.{" "}
+                  {t.client_amount_units != null &&
+                    `Actual split: ${t.client_amount_units} / ${t.freelancer_amount_units}.`}
+                </small>
                 {explorerURL(t.signature) && (
                   <a
                     href={explorerURL(t.signature)!}
@@ -233,9 +241,10 @@ export function OperationsDashboard({
                   : "the agreed escalation time"}
                 .
               </p>
-              <p className="muted">
-                Wallet settlement is not enabled on this deployment.
-              </p>
+              <EscrowPanel
+                key={`${selected.project_id}:${wallet}`}
+                projectId={selected.project_id}
+              />
               <EvidencePanel
                 key={`${selected.project_id}:${selected.agreement_version}:${selected.milestone_index}`}
                 projectId={selected.project_id}
@@ -269,7 +278,8 @@ export function OperationsDashboard({
                   ))}
                   {support.transactions.map((t) => (
                     <p key={`${t.project_id}:${t.signature}:${t.event_kind}`}>
-                      Project {t.project_id} · {t.event_kind} · {t.status}
+                      Project {t.project_id} · {t.event_kind} · {t.status} ·{" "}
+                      {t.network ?? "devnet"}
                     </p>
                   ))}
                   {support.notes.map((n) => (

@@ -7,6 +7,7 @@ import bs58 from "bs58";
 import { browserSupabase } from "@/lib/supabase/client";
 import { ProjectEditor } from "./project-editor";
 import { AgreementView } from "./agreement-view";
+import { EscrowPanel } from "./escrow-panel";
 import { EvidencePanel } from "./evidence-panel";
 import { OperationsDashboard } from "./operations-dashboard";
 import { agreementCommitment } from "@/lib/agreements/crypto";
@@ -433,6 +434,10 @@ export function Workspace() {
                     session.user.wallet === detail.project.freelancer_wallet
                   }
                 />
+                <EscrowPanel
+                  key={`${detail.project.id}:${session.user.wallet}`}
+                  projectId={detail.project.id}
+                />
                 <OperationsDashboard
                   key={detail.project.id}
                   wallet={session.user.wallet}
@@ -521,8 +526,8 @@ export function Workspace() {
           </>
         ) : null}
         <footer>
-          Private agreements and evidence. Wallet escrow transactions are not
-          enabled on this deployment.
+          Private agreements and evidence. Escrow actions use Solana devnet TEST
+          tokens.
         </footer>
       </main>
     </div>
