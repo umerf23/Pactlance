@@ -7,6 +7,8 @@ import bs58 from "bs58";
 import { browserSupabase } from "@/lib/supabase/client";
 import { ProjectEditor } from "./project-editor";
 import { AgreementView } from "./agreement-view";
+import { EvidencePanel } from "./evidence-panel";
+import { OperationsDashboard } from "./operations-dashboard";
 import { agreementCommitment } from "@/lib/agreements/crypto";
 import {
   acceptanceMessage,
@@ -78,6 +80,7 @@ export function Workspace() {
   const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
+  const [evidenceIndex, setEvidenceIndex] = useState(0);
   const authenticated = !!session?.user && session.user.wallet === address;
   const refreshSession = useCallback(async () => {
     const response = await fetch("/api/session", { cache: "no-store" });
@@ -390,14 +393,52 @@ export function Workspace() {
                 }}
               />
             ) : detail ? (
-              <AgreementView
-                key={`${detail.project.id}-${detail.project.current_version}`}
-                detail={detail}
-                wallet={session.user.wallet}
-                onAccept={accept}
-                onEdit={() => setEditing(true)}
-                onBack={() => setDetail(null)}
-              />
+              <>
+                <AgreementView
+                  key={`${detail.project.id}-${detail.project.current_version}`}
+                  detail={detail}
+                  wallet={session.user.wallet}
+                  onAccept={accept}
+                  onEdit={() => setEditing(true)}
+                  onBack={() => setDetail(null)}
+                />
+                <section className="workspace-card">
+                  <label>
+                    Milestone evidence
+                    <select
+                      value={Math.min(
+                        evidenceIndex,
+                        detail.agreement.terms.milestones.length - 1,
+                      )}
+                      onChange={(e) => setEvidenceIndex(Number(e.target.value))}
+                    >
+                      {detail.agreement.terms.milestones.map((m, i) => (
+                        <option key={m.id} value={i}>
+                          {i + 1}. {m.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </section>
+                <EvidencePanel
+                  key={`${detail.project.id}:${detail.agreement.version}:${evidenceIndex}`}
+                  projectId={detail.project.id}
+                  version={detail.agreement.version}
+                  index={Math.min(
+                    evidenceIndex,
+                    detail.agreement.terms.milestones.length - 1,
+                  )}
+                  canUpload={true}
+                  freelancer={
+                    session.user.wallet === detail.project.freelancer_wallet
+                  }
+                />
+                <OperationsDashboard
+                  key={detail.project.id}
+                  wallet={session.user.wallet}
+                  projectId={detail.project.id}
+                />
+              </>
             ) : (
               <>
                 <section className="workspace-card">
@@ -452,6 +493,10 @@ export function Workspace() {
                     </div>
                   )}
                 </section>
+                <OperationsDashboard
+                  key={session.user.wallet}
+                  wallet={session.user.wallet}
+                />
                 <section className="workspace-card">
                   <h2>Your profile</h2>
                   <label>
@@ -476,7 +521,8 @@ export function Workspace() {
           </>
         ) : null}
         <footer>
-          Off-chain test agreements only. Escrow funding begins in Phase 4.
+          Private agreements and evidence. Wallet escrow transactions are not
+          enabled on this deployment.
         </footer>
       </main>
     </div>

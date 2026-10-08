@@ -7,11 +7,12 @@ Previously called FreelancePay in the planning documents.
 
 Wallet sign-in, profiles, private projects and immutable multi-milestone agreements are implemented. The Solana escrow contract and client support sequential funding, separate vaults, delivery commitments, approval, review-timeout claims, non-delivery refunds, disputes, exclusive primary/backup reviewer authority, mutual allocations, cancellation and jointly accepted revisions of future work.
 
-The contract is verified locally. Payment screens, private evidence workflows and devnet integration are later phases; no escrow deployment exists yet. Vercel deployment is paused.
+The contract is verified locally. Private evidence uploads/links, reviewer evidence screens, in-app reminders, support notes and transaction history are implemented. Payment screens and live chain reconciliation remain Phase 7 work; no escrow deployment exists yet. Vercel deployment is paused.
 
 - [Phase 3 setup and verification](docs/phase-3.md)
 - [Phase 4 escrow verification](docs/phase-4.md)
 - [Phase 5 settlement rules and verification](docs/phase-5.md)
+- [Phase 6 evidence and operations](docs/phase-6.md)
 
 ## Run the application
 
@@ -56,6 +57,6 @@ The committed program ID is a local-test identifier. Before deployment, generate
 
 ## Full project scope
 
-A project has multiple sequential milestones, one active funded milestone at a time, and a distinct vault per milestone. Remaining phases add private delivery/evidence access, reviewer and support screens, reminders, history, deployment, chain reconciliation and recovery, then user trials and submission assets.
+A project has multiple sequential milestones, one active funded milestone at a time, and a distinct vault per milestone. Remaining phases add devnet deployment, wallet payment flows, chain reconciliation and recovery, then user trials and submission assets.
 
 Prototype tokens are labelled TEST tokens. Real funds, PKR cash-out and card funding are later work. Database caches and frontend eligibility helpers cannot authorize token movements. The Solana program enforces payment rules; claims need an actual transaction submitted by a user or worker.
