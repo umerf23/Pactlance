@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
 
-declare_id!("Fg6PaFpoGXkYsidMpWxTWqkZq7FEfcYkgMQhgqJM6dS9");
-pub const MAX_MILESTONES: usize = 32;
+declare_id!("3oh6fZaHMsHY176Kbb2LGRsqW1nRq7UBpJaWirMNioxP");
+pub const MAX_MILESTONES: usize = 20;
 pub const FUNDED: u8 = 1;
 pub const SUBMITTED: u8 = 2;
 pub const SETTLED: u8 = 3;
@@ -168,7 +168,7 @@ pub struct ProjectTerms {
     pub backup_reviewer: Pubkey,
     pub review_seconds: i64,
     pub backup_delay_seconds: i64,
-    #[max_len(32)]
+    #[max_len(20)]
     pub milestones: Vec<MilestoneTerms>,
 }
 impl ProjectTerms {

@@ -5,7 +5,7 @@ solana_version = "2.3.0"
 resolution = true
 skip-lint = false
 [programs.localnet]
-pactlance = "Fg6PaFpoGXkYsidMpWxTWqkZq7FEfcYkgMQhgqJM6dS9"
+pactlance = "3oh6fZaHMsHY176Kbb2LGRsqW1nRq7UBpJaWirMNioxP"
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
