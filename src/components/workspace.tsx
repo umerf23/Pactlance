@@ -292,7 +292,7 @@ export function Workspace() {
       <main className="workspace-content">
         <div className="workspace-heading">
           <div>
-            <p className="eyebrow">PHASE 03 · SHARED WORKSPACE</p>
+            <p className="eyebrow">PRIVATE PROJECTS · SOLANA DEVNET</p>
             <h1>Agree before you begin.</h1>
             <p className="subtitle">
               Private projects. Clear milestones. Two signatures on the same
@@ -318,8 +318,8 @@ export function Workspace() {
               backend. They are not active on this deployment yet.
             </p>
             <p>
-              The Phase 3 interface and API are built. Until setup is complete,
-              no sign-in or project save is simulated.
+              Wallet sign-in and private project storage are implemented.
+              Complete the backend setup to use this workspace.
             </p>
             <Link className="secondary" href="/">
               Explore the sample project
@@ -327,13 +327,13 @@ export function Workspace() {
             <details>
               <summary>Setup requirements for the project owner</summary>
               <ol>
-                <li>Apply the Phase 3 database migration in Supabase.</li>
+                <li>Apply the repository database migrations in Supabase.</li>
                 <li>
                   Enable Solana Web3 sign-in and allow this site’s origin.
                 </li>
                 <li>
                   Set the Supabase URL, publishable key and server-only
-                  service-role key in Vercel, then redeploy.
+                  service-role key in the app environment, then restart or redeploy.
                 </li>
               </ol>
               <p>Never paste secret keys or wallet seed phrases into chat.</p>
