@@ -18,7 +18,7 @@
     "test:program": "cargo test --manifest-path contracts/Cargo.toml",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:escrow": "vitest run integration/escrow.vm.test.ts"
+    "test:escrow": "vitest run integration"
   },
   "dependencies": {
     "@anchor-lang/core": "0.32.2",

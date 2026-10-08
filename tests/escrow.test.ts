@@ -60,7 +60,7 @@ async function fixture() {
     data: Buffer.concat([
       await discriminator("account", "Project"),
       encodeProjectTerms(a),
-      Buffer.from([1, 1, 0, 0, 0]),
+      Buffer.from([1, 1, 0, 0, 0, 0]),
     ]),
   };
   return { a, record, account };
@@ -113,6 +113,7 @@ describe("escrow client", () => {
       [start, 0],
       [start + 1, 0],
       [start + 4, 1],
+      [start + 5, 1],
     ]) {
       const data = Buffer.from(account.data);
       data[offset] = value;

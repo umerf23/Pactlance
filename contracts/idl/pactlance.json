@@ -42,6 +42,80 @@
       ]
     },
     {
+      "name": "accept_settlement",
+      "discriminator": [
+        203,
+        247,
+        191,
+        177,
+        25,
+        90,
+        88,
+        75
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u64"
+        },
+        {
+          "name": "client_amount",
+          "type": "u64"
+        },
+        {
+          "name": "freelancer_amount",
+          "type": "u64"
+        },
+        {
+          "name": "cancel_remaining",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "approve_milestone",
       "discriminator": [
         145,
@@ -133,6 +207,143 @@
       "args": []
     },
     {
+      "name": "cancel_remaining",
+      "discriminator": [
+        41,
+        54,
+        90,
+        98,
+        141,
+        25,
+        60,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "client",
+          "signer": true
+        },
+        {
+          "name": "freelancer",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u32"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "claim_after_review",
+      "discriminator": [
+        114,
+        16,
+        249,
+        229,
+        128,
+        156,
+        74,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true,
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client_recipient",
+          "writable": true
+        },
+        {
+          "name": "freelancer_recipient",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "create_project",
       "discriminator": [
         148,
@@ -212,6 +423,106 @@
               "name": "ProjectTerms"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "execute_settlement",
+      "discriminator": [
+        237,
+        120,
+        82,
+        62,
+        224,
+        193,
+        147,
+        137
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true,
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client_recipient",
+          "writable": true
+        },
+        {
+          "name": "freelancer_recipient",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u64"
         }
       ]
     },
@@ -367,6 +678,392 @@
       "args": []
     },
     {
+      "name": "open_dispute",
+      "discriminator": [
+        137,
+        25,
+        99,
+        119,
+        23,
+        223,
+        161,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "propose_settlement",
+      "discriminator": [
+        228,
+        149,
+        56,
+        61,
+        137,
+        43,
+        106,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "expected_nonce",
+          "type": "u64"
+        },
+        {
+          "name": "client_amount",
+          "type": "u64"
+        },
+        {
+          "name": "freelancer_amount",
+          "type": "u64"
+        },
+        {
+          "name": "cancel_remaining",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "refund_non_delivery",
+      "discriminator": [
+        197,
+        144,
+        27,
+        167,
+        117,
+        84,
+        103,
+        16
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true,
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client_recipient",
+          "writable": true
+        },
+        {
+          "name": "freelancer_recipient",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resolve_dispute",
+      "discriminator": [
+        231,
+        6,
+        202,
+        6,
+        96,
+        103,
+        12,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true,
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client_recipient",
+          "writable": true
+        },
+        {
+          "name": "freelancer_recipient",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "client_amount",
+          "type": "u64"
+        },
+        {
+          "name": "freelancer_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "revise_project",
+      "discriminator": [
+        74,
+        135,
+        41,
+        32,
+        162,
+        38,
+        151,
+        0
+      ],
+      "accounts": [
+        {
+          "name": "client",
+          "signer": true
+        },
+        {
+          "name": "freelancer",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "previous_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ProjectTerms"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "submit_delivery",
       "discriminator": [
         217,
@@ -488,6 +1185,45 @@
         200,
         223
       ]
+    },
+    {
+      "name": "MilestoneSettled",
+      "discriminator": [
+        14,
+        243,
+        90,
+        90,
+        207,
+        201,
+        235,
+        116
+      ]
+    },
+    {
+      "name": "ProjectChanged",
+      "discriminator": [
+        215,
+        156,
+        69,
+        99,
+        188,
+        75,
+        245,
+        185
+      ]
+    },
+    {
+      "name": "SettlementProposed",
+      "discriminator": [
+        139,
+        32,
+        64,
+        205,
+        27,
+        154,
+        100,
+        147
+      ]
     }
   ],
   "errors": [
@@ -533,6 +1269,11 @@
     },
     {
       "code": 6008,
+      "name": "StaleProposal",
+      "msg": "Settlement proposal is stale or missing both approvals"
+    },
+    {
+      "code": 6009,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
     }
@@ -591,6 +1332,68 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "agreement_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "agreement_version",
+            "type": "u32"
+          },
+          {
+            "name": "disputed_at",
+            "type": "i64"
+          },
+          {
+            "name": "backup_at",
+            "type": "i64"
+          },
+          {
+            "name": "dispute_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "client_refunded",
+            "type": "u64"
+          },
+          {
+            "name": "freelancer_paid",
+            "type": "u64"
+          },
+          {
+            "name": "proposal_nonce",
+            "type": "u64"
+          },
+          {
+            "name": "proposal_client_amount",
+            "type": "u64"
+          },
+          {
+            "name": "proposal_freelancer_amount",
+            "type": "u64"
+          },
+          {
+            "name": "proposal_cancel",
+            "type": "bool"
+          },
+          {
+            "name": "client_approved",
+            "type": "bool"
+          },
+          {
+            "name": "freelancer_approved",
+            "type": "bool"
           }
         ]
       }
@@ -615,6 +1418,34 @@
           {
             "name": "amount",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MilestoneSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "project",
+            "type": "pubkey"
+          },
+          {
+            "name": "index",
+            "type": "u16"
+          },
+          {
+            "name": "client_amount",
+            "type": "u64"
+          },
+          {
+            "name": "freelancer_amount",
+            "type": "u64"
+          },
+          {
+            "name": "cancelled",
+            "type": "bool"
           }
         ]
       }
@@ -666,6 +1497,39 @@
           },
           {
             "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "cancelled",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProjectChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "project",
+            "type": "pubkey"
+          },
+          {
+            "name": "version",
+            "type": "u32"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "cancelled",
             "type": "bool"
           }
         ]
@@ -735,6 +1599,38 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SettlementProposed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "project",
+            "type": "pubkey"
+          },
+          {
+            "name": "index",
+            "type": "u16"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "client_amount",
+            "type": "u64"
+          },
+          {
+            "name": "freelancer_amount",
+            "type": "u64"
+          },
+          {
+            "name": "cancel_remaining",
+            "type": "bool"
           }
         ]
       }
