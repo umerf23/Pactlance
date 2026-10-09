@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import bs58 from "bs58";
 import { browserSupabase } from "@/lib/supabase/client";
@@ -18,6 +18,8 @@ import {
   type ProjectRecord,
 } from "@/lib/agreements/schema";
 import { formatTokenAmount } from "@/lib/domain";
+import { projectLink } from "@/lib/project-links";
+import { WalletReadiness } from "./wallet-readiness";
 const WalletButton = dynamic(
   () =>
     import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -63,7 +65,11 @@ function inputFromDetail(detail: ProjectDetail): AgreementInput {
     })),
   };
 }
-export function Workspace() {
+export function Workspace({
+  initialProjectId = null,
+}: {
+  initialProjectId?: string | null;
+}) {
   const {
     publicKey,
     signMessage,
@@ -82,7 +88,12 @@ export function Workspace() {
   const [name, setName] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
   const [evidenceIndex, setEvidenceIndex] = useState(0);
+  const [shareNotice, setShareNotice] = useState("");
+  const requestGeneration = useRef(0);
   const authenticated = !!session?.user && session.user.wallet === address;
+  useEffect(() => {
+    requestGeneration.current += 1;
+  }, [address]);
   const refreshSession = useCallback(async () => {
     const response = await fetch("/api/session", { cache: "no-store" });
     const data = await response.json();
@@ -129,6 +140,28 @@ export function Workspace() {
       cancelled = true;
     };
   }, [authenticated, address]);
+  useEffect(() => {
+    if (!authenticated || !initialProjectId) return;
+    let active = true;
+    const generation = requestGeneration.current;
+    api(`/api/projects/${initialProjectId}`)
+      .then((project) => {
+        if (active && generation === requestGeneration.current) {
+          setDetail(project);
+          setCreating(false);
+          setEditing(false);
+        }
+      })
+      .catch(() => {
+        if (active && generation === requestGeneration.current)
+          setError(
+            "This project is unavailable to your wallet. Check the link and connect the participant wallet named in the agreement.",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticated, address, initialProjectId]);
   async function signIn() {
     setError("");
     if (!publicKey || !signMessage) {
@@ -136,6 +169,12 @@ export function Workspace() {
       return;
     }
     setBusy(true);
+    requestGeneration.current += 1;
+    setProjects([]);
+    setDetail(null);
+    setName("");
+    setProfileNotice("");
+    setShareNotice("");
     try {
       const supabase = browserSupabase();
       const statement =
@@ -197,6 +236,7 @@ export function Workspace() {
   }
   async function signOut() {
     setError("");
+    requestGeneration.current += 1;
     try {
       const { error } = await browserSupabase().auth.signOut();
       if (error) throw error;
@@ -211,16 +251,50 @@ export function Workspace() {
     }
   }
   async function openProject(id: string) {
+    const generation = ++requestGeneration.current;
     setBusy(true);
     setError("");
     try {
-      setDetail(await api(`/api/projects/${id}`));
+      const project = await api(`/api/projects/${id}`);
+      if (generation !== requestGeneration.current) return;
+      setDetail(project);
+      setShareNotice("");
+      setEvidenceIndex(0);
+      window.history.replaceState(
+        null,
+        "",
+        projectLink(window.location.origin, id),
+      );
       setCreating(false);
       setEditing(false);
     } catch (e) {
-      setError((e as Error).message);
+      if (generation === requestGeneration.current)
+        setError((e as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+  function closeProject() {
+    requestGeneration.current += 1;
+    setDetail(null);
+    setCreating(false);
+    setEditing(false);
+    setBusy(false);
+    window.history.replaceState(null, "", "/workspace");
+  }
+  async function shareProject() {
+    if (!detail) return;
+    try {
+      await navigator.clipboard.writeText(
+        projectLink(window.location.origin, detail.project.id),
+      );
+      setShareNotice(
+        "Project link copied. Only the named participant wallets can open this agreement.",
+      );
+    } catch {
+      setShareNotice(
+        "Copy the project link below and send it to the other participant.",
+      );
     }
   }
   async function save(agreement: AgreementInput) {
@@ -278,8 +352,22 @@ export function Workspace() {
       filter === "all" ||
       (filter === "client" ? p.client_wallet : p.freelancer_wallet) === address,
   );
+  async function retrySession() {
+    setBusy(true);
+    setError("");
+    try {
+      await refreshSession();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="live-workspace dapp-workspace">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <header>
         <Link className="brand" href="/">
           <span className="workspace-brand-icon" aria-hidden="true">
@@ -291,11 +379,7 @@ export function Workspace() {
           <button
             type="button"
             aria-current={!detail ? "page" : undefined}
-            onClick={() => {
-              setDetail(null);
-              setCreating(false);
-              setEditing(false);
-            }}
+            onClick={closeProject}
           >
             Projects
           </button>
@@ -305,18 +389,18 @@ export function Workspace() {
               <a href="#project-evidence">Evidence</a>
             </>
           ) : null}
-          <Link href="/">Demo</Link>
+          <Link href="/guide">Payment rules</Link>
         </nav>
         <div className="wallet-actions">
           {session?.configured ? <WalletButton /> : null}
         </div>
       </header>
-      <main className="workspace-content">
+      <main className="workspace-content" id="main-content">
         <div className="workspace-heading workspace-hero">
           <div>
             <p className="eyebrow">PACTLANCE / WORKSPACE</p>
             <h1>
-              {detail
+              {detail && authenticated
                 ? "Project workspace"
                 : authenticated
                   ? "Your projects"
@@ -339,6 +423,11 @@ export function Workspace() {
             {error}
           </p>
         ) : null}
+        {!session && error ? (
+          <button className="secondary" disabled={busy} onClick={retrySession}>
+            Retry workspace connection
+          </button>
+        ) : null}
         {!session && !error ? (
           <p role="status">Checking workspace configuration…</p>
         ) : null}
@@ -354,7 +443,7 @@ export function Workspace() {
               Wallet sign-in and private project storage are implemented.
               Complete the backend setup to use this workspace.
             </p>
-            <Link className="secondary" href="/">
+            <Link className="secondary" href="/preview">
               Explore the sample project
             </Link>
             <details>
@@ -385,6 +474,21 @@ export function Workspace() {
               First connect a Solana wallet, then sign a message to verify
               ownership. Connecting alone does not sign you in.
             </p>
+            {initialProjectId ? (
+              <p className="notice">
+                You received a private project link. Sign in with the client or
+                freelancer wallet specified in its terms to open it.
+              </p>
+            ) : null}
+            <ol className="onboarding-steps">
+              <li>
+                Connect a compatible Solana wallet using the button above.
+              </li>
+              <li>
+                Sign the ownership message. This sign-in does not pay anyone.
+              </li>
+              <li>Create an agreement or open the project shared with you.</li>
+            </ol>
             {session.user ? (
               <p className="notice">
                 Your session belongs to {session.user.wallet}. Connect that
@@ -423,6 +527,10 @@ export function Workspace() {
                 Sign out
               </button>
             </div>
+            <WalletReadiness
+              key={session.user.wallet}
+              wallet={session.user.wallet}
+            />
             {creating || editing ? (
               <ProjectEditor
                 key={
@@ -442,13 +550,56 @@ export function Workspace() {
               />
             ) : detail ? (
               <>
+                <section className="workspace-card project-sharing">
+                  <div className="workspace-heading">
+                    <div>
+                      <p className="eyebrow">PRIVATE PROJECT</p>
+                      <h2>Bring the other participant into this agreement</h2>
+                    </div>
+                    <button className="secondary" onClick={shareProject}>
+                      Copy project link
+                    </button>
+                  </div>
+                  <p>
+                    Send this link to the client or freelancer. They must
+                    connect their own named wallet and review the same terms.
+                    Sharing the link does not grant access or accept terms.
+                  </p>
+                  <label>
+                    Project workspace link
+                    <input
+                      readOnly
+                      value={
+                        typeof window === "undefined"
+                          ? ""
+                          : projectLink(
+                              window.location.origin,
+                              detail.project.id,
+                            )
+                      }
+                      onFocus={(event) => event.target.select()}
+                    />
+                  </label>
+                  <p role="status">{shareNotice}</p>
+                  <div className="operational-actions">
+                    <a className="secondary" href="#project-escrow">
+                      Payment actions
+                    </a>
+                    <a className="secondary" href="#project-evidence">
+                      Delivery evidence
+                    </a>
+                    <Link className="text-button" href="/guide">
+                      Understand the rules
+                    </Link>
+                  </div>
+                </section>
                 <AgreementView
                   key={`${detail.project.id}-${detail.project.current_version}`}
                   detail={detail}
                   wallet={session.user.wallet}
                   onAccept={accept}
                   onEdit={() => setEditing(true)}
-                  onBack={() => setDetail(null)}
+                  onBack={closeProject}
                 />
                 <section id="project-evidence" className="workspace-card">
                   <label>

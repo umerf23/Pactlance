@@ -177,9 +177,9 @@ export function AgreementView({
         </small>
       </div>
       <p className="notice">
-        Off-chain acceptance only. Escrow program and token mint are pending.
-        This signature cannot fund escrow; on-chain terms require fresh
-        acceptance in Phase 4.
+        This document signature records off-chain acceptance and makes no
+        deposit. In Payment actions, both participants must also accept the
+        terms bound to the deployed program and TEST mint before funding.
       </p>
       {current && !mine && !detail.project.locked ? (
         <>

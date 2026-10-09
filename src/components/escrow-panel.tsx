@@ -26,6 +26,9 @@ import { verifyJointEnvelope, type JointEnvelope } from "@/lib/escrow/joint";
 import { evidenceCommitment, type EvidenceRecord } from "@/lib/evidence/schema";
 import { explorerURL } from "@/lib/operations/model";
 import { operationalAPI } from "./evidence-panel";
+import { formatTokenAmount } from "@/lib/domain";
+import { refundUnits } from "@/lib/escrow/refund-amount";
+import { readWalletBalances } from "@/lib/escrow/wallet-readiness";
 interface Milestone {
   index: number;
   status: number;
@@ -69,9 +72,10 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
     [notice, setNotice] = useState("");
   const [evidence, setEvidence] = useState<EvidenceRecord[]>([]),
     [evidenceId, setEvidenceId] = useState(""),
-    [clientUnits, setClientUnits] = useState("0"),
+    [clientRefund, setClientRefund] = useState("0"),
     [cancelFuture, setCancelFuture] = useState(false),
     [jointPackage, setJointPackage] = useState("");
+  const clientUnits = refundUnits(clientRefund)?.toString() ?? "invalid";
   const storageKey = wallet ? `pactlance:pending:${wallet}:${projectId}` : null;
   useEffect(() => {
     let active = true;
@@ -324,11 +328,22 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
           if (!account) throw new Error("Create escrow first.");
           ixs.push(await client.acceptProjectInstruction(a, who, account));
           break;
-        case "fund":
+        case "fund": {
           if (!account || who.toBase58() !== a.terms.clientWallet)
             throw new Error("Only the client funds milestones.");
+          const balances = await readWalletBalances(connection, who, mint);
+          const amount = BigInt(a.terms.milestones[index].amountUnits);
+          if (balances.lamports === 0)
+            throw new Error(
+              "Add devnet SOL for transaction fees and account creation before funding.",
+            );
+          if (balances.tokenUnits < amount)
+            throw new Error(
+              `Insufficient configured TEST tokens. This milestone needs ${formatTokenAmount(amount)} TEST; your confirmed balance is ${formatTokenAmount(balances.tokenUnits)} TEST.`,
+            );
           ixs.push(await client.fundInstruction(a, index, cr, account));
           break;
+        }
         case "submit":
           if (who.toBase58() !== a.terms.freelancerWallet)
             throw new Error("Only the freelancer submits delivery.");
@@ -371,7 +386,9 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         case "propose":
         case "resolve": {
           if (!m || !/^(0|[1-9][0-9]{0,19})$/.test(clientUnits))
-            throw new Error("Enter an exact integer allocation.");
+            throw new Error(
+              "Enter a valid TEST refund amount with at most six decimal places.",
+            );
           const c = BigInt(clientUnits),
             f = BigInt(m.amount) - c;
           if (f < 0n) throw new Error("Refund exceeds funded obligation.");
@@ -574,6 +591,35 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
     !!m &&
     /^(0|[1-9][0-9]{0,19})$/.test(clientUnits) &&
     BigInt(clientUnits) <= BigInt(m.amount);
+  const nextStep = pending
+    ? "Recover the saved transaction before requesting another signature."
+    : !s
+      ? "Review these terms, then create the escrow with a participant wallet."
+      : s.cancelled
+        ? "Remaining work is cancelled. Review the transaction history."
+        : a && s.next >= a.terms.milestones.length
+          ? "All milestones are settled. Review the finalized transaction history and recipient balances."
+          : !s.clientAccepted || !s.freelancerAccepted
+            ? "Both participants must accept these deployed terms on chain before funding. Share the project link with the other participant."
+            : !s.active
+              ? isClient
+                ? "Fund the next milestone with the configured TEST token. Check your balances first."
+                : "Wait for the client to fund the next milestone. Verify funding here before starting work."
+              : m?.status === 1
+                ? isFreelancer
+                  ? "Save your delivery evidence, then load it here and submit its commitment before the delivery deadline."
+                  : "This milestone is funded. Wait for recorded delivery; review its evidence once submitted."
+                : m?.status === 2
+                  ? BigInt(snapshot?.chainTime ?? 0) >= BigInt(m.reviewDeadline)
+                    ? "The review window has expired. An eligible claim can settle to the fixed freelancer wallet."
+                    : isClient
+                      ? "Review the private delivery evidence. Approve payment or open an eligible dispute before review expiry."
+                      : "Delivery is recorded. Wait for client review; the eligible timeout claim becomes available after review expiry."
+                  : m?.status === 4
+                    ? reviewer
+                      ? "You are the currently eligible reviewer. Inspect both parties’ evidence before allocating the funded amount."
+                      : "Ordinary payout is paused. The eligible reviewer can resolve this dispute, or both parties can agree on a mutual allocation."
+                    : "Refresh finalized status and review the available actions.";
   return (
     <section
       id="project-escrow"
@@ -615,19 +661,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
           </p>
           <p className="escrow-next-step">
             <strong>Next step: </strong>
-            {pending
-              ? "Recover the saved transaction before requesting another signature."
-              : !s
-                ? "Review these terms, then create the escrow with a participant wallet."
-                : s.cancelled
-                  ? "Remaining work is cancelled. Review the transaction history."
-                  : s.next >= a.terms.milestones.length
-                    ? "All milestones are settled. Review the transaction history."
-                    : !s.clientAccepted || !s.freelancerAccepted
-                      ? "Both participants must accept these terms on chain before funding."
-                      : !s.active
-                        ? "The client can fund the next milestone using the configured TEST token."
-                        : "Review the active milestone and its available delivery or settlement actions."}
+            {nextStep}
           </p>
           {snapshot?.wallet !== wallet && (
             <p role="status">
@@ -723,6 +757,18 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
               acts, funds can remain locked indefinitely.
             </p>
           )}
+          {m?.status === 4 ? (
+            <p>
+              Eligible reviewer at the refreshed chain time:{" "}
+              <code className="wrap-code">
+                {BigInt(snapshot?.chainTime ?? 0) < BigInt(m.backupAt)
+                  ? a.terms.reviewerWallet
+                  : a.terms.backupReviewerWallet}
+              </code>
+              Exclusive backup activation:{" "}
+              {new Date(Number(m.backupAt) * 1000).toLocaleString()}.
+            </p>
+          ) : null}
           {s && s.next >= a.terms.milestones.length && (
             <p>All milestones settled.</p>
           )}
@@ -742,8 +788,8 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                 }
               </h3>
               <p>
-                Funded obligation: {m.amount} TEST base units. Delivery
-                deadline:{" "}
+                Funded amount: {formatTokenAmount(BigInt(m.amount))} TEST.
+                Delivery deadline:{" "}
                 {new Date(Number(m.deliveryDeadline) * 1000).toLocaleString()}.
               </p>
               {participant && (
@@ -821,17 +867,17 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                 <section>
                   <h3>Settlement allocation</h3>
                   <label>
-                    Client refund in TEST base units
+                    Client refund (TEST)
                     <input
-                      inputMode="numeric"
-                      value={clientUnits}
-                      onChange={(e) => setClientUnits(e.target.value)}
+                      inputMode="decimal"
+                      value={clientRefund}
+                      onChange={(e) => setClientRefund(e.target.value)}
                     />
                   </label>
                   <p>
                     {allocationValid
-                      ? `Client: ${clientUnits}; freelancer: ${BigInt(m.amount) - BigInt(clientUnits)} TEST base units.`
-                      : "Enter an integer refund between zero and the funded obligation."}
+                      ? `Client refund: ${formatTokenAmount(BigInt(clientUnits))} TEST; freelancer payout: ${formatTokenAmount(BigInt(m.amount) - BigInt(clientUnits))} TEST.`
+                      : "Enter a refund between zero and the funded amount, with at most six decimal places."}
                   </p>
                   {participant && (
                     <>
@@ -852,8 +898,11 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                       {BigInt(m.proposalNonce) > 0n && (
                         <>
                           <p>
-                            Proposal {m.proposalNonce}: client {m.clientAmount};
-                            freelancer {m.freelancerAmount}; future work{" "}
+                            Proposal {m.proposalNonce}: client{" "}
+                            {formatTokenAmount(BigInt(m.clientAmount))} TEST;
+                            freelancer{" "}
+                            {formatTokenAmount(BigInt(m.freelancerAmount))}{" "}
+                            TEST; future work{" "}
                             {m.cancelRemaining ? "cancelled" : "retained"}.
                             Client approval: {String(m.clientApproved)};
                             freelancer approval: {String(m.freelancerApproved)}.

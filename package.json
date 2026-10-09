@@ -24,7 +24,8 @@
     "deploy:devnet": "node --env-file-if-exists=.env.local scripts/deploy-devnet.mjs",
     "mint:test": "node --env-file-if-exists=.env.local scripts/mint-test-tokens.mjs",
     "test:devnet": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run devnet",
-    "check:secrets": "node scripts/check-secrets.mjs"
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check:deployment": "node --env-file-if-exists=.env.local scripts/check-deployment.mjs"
   },
   "dependencies": {
     "@anchor-lang/core": "0.32.2",

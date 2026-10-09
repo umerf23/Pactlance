@@ -1800,3 +1800,137 @@ footer {
     transition: none !important;
   }
 }
+
+/* Product entry and the customer journey share the workspace's light palette. */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 1000;
+  background: #23583c;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 6px;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.landing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+  align-items: center;
+  gap: 64px;
+  padding: 60px 0 42px;
+}
+.landing-page .landing-hero h1 {
+  font-size: clamp(32px, 4.6vw, 56px);
+  line-height: 1.12;
+  letter-spacing: -2px;
+}
+.landing-page .landing-lead {
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 22px 0;
+  max-width: 570px;
+}
+.landing-hero .muted {
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 24px;
+}
+.landing-contract {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 30px;
+}
+.landing-contract ol {
+  padding-left: 24px;
+}
+.landing-contract li {
+  padding: 12px 0 12px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.landing-contract strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+.landing-contract span,
+.landing-contract > p:last-child {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 13px;
+}
+.landing-contract > p:last-child {
+  margin-top: 20px;
+}
+.landing-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  margin-top: 28px;
+}
+.landing-page .workspace-card p,
+.guide-page .workspace-card p {
+  line-height: 1.8;
+  margin: 14px 0;
+}
+.guide-page {
+  max-width: 900px !important;
+}
+.guide-page .term-list dd {
+  max-width: 550px;
+  line-height: 1.7;
+}
+.onboarding-steps {
+  padding-left: 22px;
+  margin: 20px 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.wallet-readiness > summary,
+.editor details > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 600;
+}
+.project-sharing p,
+.wallet-readiness p {
+  line-height: 1.8;
+}
+.project-sharing .workspace-heading {
+  align-items: flex-start;
+}
+.dapp-workspace :where(input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 850px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-top: 28px;
+  }
+  .landing-columns {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+@media (max-width: 650px) {
+  .landing-contract {
+    padding: 22px;
+  }
+  .landing-page .landing-hero h1 {
+    font-size: 35px;
+    letter-spacing: -1px;
+  }
+  .landing-page .landing-lead {
+    font-size: 16px;
+  }
+  .landing-page > header > .primary {
+    margin-left: auto;
+  }
+}
