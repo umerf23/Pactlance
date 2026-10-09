@@ -116,6 +116,21 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
     setSnapshot(s);
     return s;
   }
+  async function refreshStatus() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await refresh();
+      setNotice(
+        "Finalized chain status refreshed. Refresh does not request a wallet signature.",
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   function actor(s: Snapshot) {
     if (!publicKey || !signTransaction || s.wallet !== wallet)
       throw new Error("Connect and sign in with the same Solana wallet.");
@@ -551,14 +566,10 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
     /^(0|[1-9][0-9]{0,19})$/.test(clientUnits) &&
     BigInt(clientUnits) <= BigInt(m.amount);
   return (
-    <section className="workspace-card">
+    <section className="workspace-card escrow-panel" aria-busy={busy}>
       <div className="workspace-heading">
         <h2>Devnet escrow</h2>
-        <button
-          className="secondary"
-          disabled={busy}
-          onClick={() => refresh().catch((e) => setError(e.message))}
-        >
+        <button className="secondary" disabled={busy} onClick={refreshStatus}>
           Refresh chain status
         </button>
       </div>
@@ -568,7 +579,14 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
-      {!snapshot && <p>Loading finalized escrow state…</p>}
+      {!snapshot && !error && (
+        <p role="status">Loading finalized escrow state…</p>
+      )}
+      {!snapshot && error && (
+        <p>
+          Chain status could not be loaded. Use Refresh chain status to retry.
+        </p>
+      )}
       {snapshot && !snapshot.configured && (
         <p>Escrow deployment settings are pending.</p>
       )}
@@ -578,10 +596,32 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
             Solana devnet · TEST tokens have no monetary value. Wallet
             signatures authorize on-chain actions.
           </p>
+          <p className="escrow-next-step">
+            <strong>Next step: </strong>
+            {pending
+              ? "Recover the saved transaction before requesting another signature."
+              : !s
+                ? "Review these terms, then create the escrow with a participant wallet."
+                : s.cancelled
+                  ? "Remaining work is cancelled. Review the transaction history."
+                  : s.next >= a.terms.milestones.length
+                    ? "All milestones are settled. Review the transaction history."
+                    : !s.clientAccepted || !s.freelancerAccepted
+                      ? "Both participants must accept these terms on chain before funding."
+                      : !s.active
+                        ? "The client can fund the next milestone using the configured TEST token."
+                        : "Review the active milestone and its available delivery or settlement actions."}
+          </p>
+          {snapshot?.wallet !== wallet && (
+            <p role="status">
+              Connect and sign in with the same Solana wallet to enable
+              transaction buttons.
+            </p>
+          )}
           <p>
             Version {a.terms.version} · commitment <code>{a.commitment}</code>
           </p>
-          <p>
+          <p className="escrow-identities">
             Client: {a.terms.clientWallet}
             <br />
             Freelancer: {a.terms.freelancerWallet}
@@ -603,6 +643,13 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                 <button disabled={disabled} onClick={() => act("accept")}>
                   Accept deployed terms on chain
                 </button>
+              )}
+              {isClient && (!s.clientAccepted || !s.freelancerAccepted) && (
+                <p className="muted">
+                  Funding unlocks after both acceptances are finalized. The
+                  other participant must connect and sign in with their own
+                  wallet.
+                </p>
               )}
               {!s.active && s.next < a.terms.milestones.length && isClient && (
                 <button
@@ -789,7 +836,14 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
             !s.active &&
             !s.cancelled &&
             s.next < a.terms.milestones.length && (
-              <section>
+              <details className="escrow-joint">
+                <summary>
+                  Cancel or revise future work with both signatures
+                </summary>
+                <p className="muted">
+                  Only use this section to cancel or revise unfunded work. Leave
+                  the package empty during ordinary acceptance and funding.
+                </p>
                 <h3>Joint authorization for future work</h3>
                 <p>
                   Both participants must sign. Settled milestone terms remain
@@ -827,7 +881,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                 >
                   Verify, co-sign and submit package
                 </button>
-              </section>
+              </details>
             )}
         </>
       )}

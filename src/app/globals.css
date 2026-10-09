@@ -1065,3 +1065,72 @@ footer {
   padding: 10px;
   max-width: 100%;
 }
+
+/* Clear transaction controls and narrow-screen escrow layout. */
+.escrow-panel {
+  overflow-wrap: anywhere;
+}
+.escrow-panel button:not(.secondary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  margin: 6px 10px 6px 0;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  background: var(--green);
+  color: white;
+  line-height: 1.4;
+  text-align: left;
+}
+.escrow-panel button:disabled {
+  opacity: 0.65;
+  background: #e8ece6;
+  color: #566352;
+  border-color: #cad2c6;
+}
+.escrow-panel a {
+  display: inline-block;
+  padding: 10px 0;
+  margin-right: 16px;
+  color: var(--green);
+  text-decoration: underline;
+}
+.escrow-panel pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.escrow-next-step {
+  padding: 14px 16px;
+  border-left: 4px solid var(--green);
+  background: #eff4e9;
+  border-radius: 6px;
+}
+.escrow-joint {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+.escrow-joint summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 12px 0;
+}
+@media (max-width: 650px) {
+  .escrow-panel button:not(.secondary) {
+    width: 100%;
+    margin-right: 0;
+  }
+  .live-workspace header {
+    height: auto;
+    min-height: 81px;
+    padding-block: 16px;
+    flex-wrap: wrap;
+  }
+  .wallet-actions {
+    flex-wrap: wrap;
+  }
+}

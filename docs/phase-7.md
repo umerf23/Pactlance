@@ -47,4 +47,4 @@ Without a worker key, reconciliation and recovery of already signed claims still
 
 ## Remaining completion gate
 
-No escrow deployment or TEST mint has been created by this recovery. The workspace lacks the local Supabase environment settings and a funded deployment signer. Phase 7 remains open until the full devnet/browser journey, missed-event recovery and worker outage/resume have recorded live results. Vercel deployment remains paused; user trials and submission assets follow in Phase 8.
+The original reconstruction did not deploy a program. Subsequently, the user reported successful deployment, TEST mint/config verification and browser escrow creation; see `docs/phase-8.md` for the public identifiers and evidence limits. Full devnet settlement, missed-event recovery and worker outage/resume remain open. At the user's request, live testing is deferred to the end of development while Phase 8 usability and submission work proceeds. Vercel deployment remains paused.

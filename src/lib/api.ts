@@ -72,7 +72,9 @@ export function failure(error: unknown) {
   console.error(
     "Pactlance request failed",
     error instanceof Error
-      ? (process.env.NODE_ENV === "development" ? error.message : error.name)
+      ? process.env.NODE_ENV === "development"
+        ? error.message
+        : error.name
       : "unknown",
   );
   return json({ error: "Unable to complete this request. Please retry." }, 500);
