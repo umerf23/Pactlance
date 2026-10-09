@@ -5,9 +5,12 @@ solana_version = "2.3.0"
 resolution = true
 skip-lint = false
 [programs.localnet]
-pactlance = "Fg6PaFpoGXkYsidMpWxTWqkZq7FEfcYkgMQhgqJM6dS9"
+pactlance = "9T95KC5YSQ7LV2KwUcY7SyBu6cYF6Urv8fXd7kYaWNpL"
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 [scripts]
 test = "cargo test --workspace"
+
+[programs.devnet]
+pactlance = "9T95KC5YSQ7LV2KwUcY7SyBu6cYF6Urv8fXd7kYaWNpL"

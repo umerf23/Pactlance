@@ -1018,3 +1018,785 @@ footer {
     padding: 15px;
   }
 }
+.evidence-row,
+.notice-row,
+.status-row {
+  border-top: 1px solid #dce4d1;
+  padding: 16px 0;
+}
+.notice-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+}
+.status-row small {
+  display: block;
+  color: #64735c;
+  margin-top: 8px;
+}
+.operational-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.evidence-form {
+  border-top: 1px solid #dce4d1;
+  margin-top: 24px;
+  padding-top: 18px;
+}
+.wrap-code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.reviewer-panel,
+.support-panel {
+  margin-top: 24px;
+  border-top: 1px solid #dce4d1;
+  padding-top: 18px;
+}
+.evidence-panel input[type="file"] {
+  padding: 10px;
+  max-width: 100%;
+}
+
+/* Clear transaction controls and narrow-screen escrow layout. */
+.escrow-panel {
+  overflow-wrap: anywhere;
+}
+.escrow-panel button:not(.secondary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  margin: 6px 10px 6px 0;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  background: var(--green);
+  color: white;
+  line-height: 1.4;
+  text-align: left;
+}
+.escrow-panel button:disabled {
+  opacity: 0.65;
+  background: #e8ece6;
+  color: #566352;
+  border-color: #cad2c6;
+}
+.escrow-panel a {
+  display: inline-block;
+  padding: 10px 0;
+  margin-right: 16px;
+  color: var(--green);
+  text-decoration: underline;
+}
+.escrow-panel pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.escrow-next-step {
+  padding: 14px 16px;
+  border-left: 4px solid var(--green);
+  background: #eff4e9;
+  border-radius: 6px;
+}
+.escrow-joint {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+.escrow-joint summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 12px 0;
+}
+@media (max-width: 650px) {
+  .escrow-panel button:not(.secondary) {
+    width: 100%;
+    margin-right: 0;
+  }
+  .live-workspace header {
+    height: auto;
+    min-height: 81px;
+    padding-block: 16px;
+    flex-wrap: wrap;
+  }
+  .wallet-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* Application surfaces are intentionally flat; emphasis follows the next action. */
+.dapp-workspace {
+  --canvas: #f3f5f1;
+  --surface: #ffffff;
+  --inset: #f6f8f3;
+  --hover: #eaf0e4;
+  --ink: #20392e;
+  --muted: #596d60;
+  --line: #dbe3d6;
+  --accent: #23583c;
+  --accent-ink: #ffffff;
+  --green: #23583c;
+  --soft-accent: #e6f0de;
+  --warn-bg: #f6efdf;
+  --warn-ink: #765d24;
+  --error-bg: #fff0eb;
+  --error-ink: #953f2a;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  color-scheme: light;
+}
+.dapp-workspace > header {
+  height: 76px;
+  padding-inline: max(24px, calc((100vw - 1200px) / 2));
+  display: flex;
+  gap: 32px;
+  background: var(--canvas);
+  color: var(--muted);
+  border-color: var(--line);
+}
+.dapp-workspace .brand {
+  font-size: 25px;
+  gap: 0;
+  letter-spacing: -1px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.dapp-workspace .brand-dot {
+  color: var(--accent);
+}
+.workspace-brand-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 9px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font:
+    italic 27px Georgia,
+    serif;
+}
+.dapp-workspace .dapp-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+}
+.dapp-workspace .dapp-nav a,
+.dapp-workspace .dapp-nav button {
+  padding: 9px 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  min-height: 40px;
+}
+.dapp-workspace .dapp-nav [aria-current="page"],
+.dapp-workspace .dapp-nav a:hover,
+.dapp-workspace .dapp-nav button:hover {
+  color: var(--ink);
+  background: var(--hover);
+}
+.dapp-workspace .wallet-actions {
+  gap: 10px;
+  flex-shrink: 0;
+}
+.dapp-workspace .wallet-adapter-button {
+  height: 40px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: 12px;
+  padding-inline: 16px;
+  font-weight: 650;
+}
+.dapp-workspace .workspace-content {
+  max-width: 1200px;
+  padding: 34px 24px 48px;
+}
+.dapp-workspace .workspace-hero {
+  min-height: 0;
+  padding: 8px 0 26px;
+  margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  gap: 24px;
+}
+.dapp-workspace .workspace-hero::after {
+  display: none;
+}
+.dapp-workspace .eyebrow {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.dapp-workspace h1 {
+  font-family: inherit;
+  font-size: clamp(28px, 3vw, 37px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -1.3px;
+}
+.dapp-workspace .subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+.workspace-hero-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.workspace-hero-note > span:last-child {
+  font-size: 10px;
+  color: var(--muted);
+}
+.dapp-workspace .network {
+  background: var(--inset);
+  border-color: var(--line);
+  color: var(--accent);
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-family: Consolas, monospace;
+}
+.dapp-workspace .network i {
+  background: var(--accent);
+}
+.dapp-workspace .session-strip {
+  background: transparent;
+  padding: 18px 0 0;
+  margin: 0;
+  font-size: 12px;
+}
+.session-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.session-avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 12px;
+}
+.session-identity strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.session-identity code {
+  color: var(--muted);
+  font-size: 11px;
+}
+.dapp-workspace .workspace-card {
+  padding: 26px;
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: none;
+}
+.dapp-workspace .workspace-heading {
+  margin-bottom: 20px;
+}
+.dapp-workspace .workspace-heading h2 {
+  margin-bottom: 0;
+}
+.dapp-workspace .workspace-hero {
+  margin-bottom: 0;
+}
+.dapp-workspace h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+}
+.dapp-workspace h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.dapp-workspace h4 {
+  color: var(--muted);
+}
+.dapp-workspace p {
+  color: var(--muted);
+}
+.dapp-workspace .primary,
+.dapp-workspace .escrow-panel button:not(.secondary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  width: auto;
+  padding: 11px 17px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: none;
+  transition: filter 130ms;
+}
+.dapp-workspace .primary:hover:not(:disabled),
+.dapp-workspace .escrow-panel button:not(.secondary):hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.dapp-workspace .secondary {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 12px;
+}
+.dapp-workspace .secondary:hover:not(:disabled) {
+  background: var(--hover);
+}
+.dapp-workspace .text-button {
+  color: var(--muted);
+  font-size: 12px;
+  min-height: 38px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.dapp-workspace .text-button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.dapp-workspace .workspace-card button:disabled {
+  opacity: 0.6;
+  background: var(--inset);
+  color: var(--muted);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.dapp-workspace button:focus-visible,
+.dapp-workspace a:focus-visible {
+  outline-color: var(--accent);
+}
+.dapp-workspace .workspace-card label {
+  color: var(--muted);
+  font-size: 12px;
+  gap: 8px;
+  margin-block: 18px;
+}
+.dapp-workspace .workspace-card input:not([type="checkbox"]),
+.dapp-workspace .workspace-card textarea,
+.dapp-workspace .workspace-card select {
+  background: var(--inset);
+  color: var(--ink);
+  border-color: var(--line);
+  border-radius: 7px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.dapp-workspace input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+.dapp-workspace .workspace-card input:focus,
+.dapp-workspace .workspace-card textarea:focus,
+.dapp-workspace .workspace-card select:focus {
+  outline-color: var(--accent);
+}
+.workspace-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.workspace-metrics > div {
+  padding: 20px 24px;
+  border-right: 1px solid var(--line);
+}
+.workspace-metrics > div:last-child {
+  border-right: 0;
+}
+.workspace-metrics span {
+  display: block;
+  font:
+    10px Consolas,
+    monospace;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.workspace-metrics strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  margin-top: 12px;
+}
+.workspace-metrics small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.dapp-workspace .project-row {
+  padding: 16px;
+  min-height: 78px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.dapp-workspace .project-row:hover:not(:disabled) {
+  background: var(--hover);
+}
+.project-row-main {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  min-width: 0;
+}
+.project-row-main strong {
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.project-row-icon {
+  flex: none;
+  height: 38px;
+  width: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--accent);
+  font:
+    16px Consolas,
+    monospace;
+}
+.dapp-workspace .project-row small {
+  color: var(--muted);
+}
+.dapp-workspace .project-row > span:last-child {
+  color: var(--accent);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.dapp-workspace .empty-state {
+  background: var(--inset);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 36px 20px;
+}
+.dapp-workspace .empty-state h3 {
+  color: var(--ink);
+}
+.dapp-workspace .empty-state p {
+  max-width: 470px;
+  margin-inline: auto;
+  font-size: 13px;
+}
+.dapp-workspace .identity-card {
+  background: var(--inset);
+  border-color: var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.dapp-workspace .identity-card strong {
+  color: var(--muted);
+  font:
+    10px Consolas,
+    monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.dapp-workspace .identity-card code {
+  font-size: 12px;
+  color: var(--ink);
+}
+.dapp-workspace .identity-card small {
+  color: var(--accent);
+  margin-bottom: 0;
+}
+.dapp-workspace .editor-milestone,
+.dapp-workspace .commitment {
+  background: var(--inset);
+  border-color: var(--line);
+  border-radius: 8px;
+  padding: 20px;
+}
+.dapp-workspace .term-list dt,
+.dapp-workspace .rules-list,
+.dapp-workspace .muted,
+.dapp-workspace .status-row small,
+.dapp-workspace .project-row > span:last-child {
+  color: var(--muted);
+}
+.dapp-workspace .term-list > div,
+.dapp-workspace .evidence-row,
+.dapp-workspace .notice-row,
+.dapp-workspace .status-row,
+.dapp-workspace .evidence-form,
+.dapp-workspace .reviewer-panel,
+.dapp-workspace .support-panel {
+  border-color: var(--line);
+}
+.dapp-workspace .outline-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 6px 9px;
+  font:
+    11px Consolas,
+    monospace;
+  color: var(--muted);
+  background: var(--inset);
+  line-height: 1.5;
+}
+.escrow-agreement-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-block: 18px;
+}
+.escrow-agreement-meta details {
+  font-size: 12px;
+  max-width: 100%;
+  color: var(--muted);
+}
+.escrow-agreement-meta summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.escrow-agreement-meta code {
+  margin-top: 8px;
+  color: var(--ink);
+}
+.dapp-workspace .escrow-next-step {
+  background: var(--soft-accent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.escrow-acceptance-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 8px 18px;
+}
+.acceptance-badge {
+  padding: 7px 10px;
+  border-radius: 5px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font:
+    11px Consolas,
+    monospace;
+}
+.acceptance-badge.accepted {
+  background: var(--soft-accent);
+  color: var(--accent);
+}
+.dapp-workspace .escrow-notice {
+  background: var(--soft-accent);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 12px 15px;
+  font-size: 13px;
+}
+.dapp-workspace .notice {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border-color: var(--line);
+}
+.dapp-workspace .error-message {
+  background: var(--error-bg);
+  color: var(--error-ink);
+  border-color: var(--line);
+  font-size: 13px;
+}
+.dapp-workspace .escrow-panel a {
+  color: var(--accent);
+}
+.dapp-workspace .scope-text {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.dapp-workspace .setup-panel details {
+  color: var(--muted);
+}
+.signin-emblem {
+  height: 44px;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--accent);
+  background: var(--inset);
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+.dapp-workspace .sign-in-panel {
+  max-width: 600px;
+  margin: 38px auto 0;
+  padding: 32px;
+}
+.dapp-workspace .sign-in-panel h2 {
+  font-size: 25px;
+  font-weight: 550;
+}
+.dapp-workspace footer {
+  border-top: 1px solid var(--line);
+  margin-top: 32px;
+  padding-top: 22px;
+  color: var(--muted);
+  font:
+    10px Consolas,
+    monospace;
+}
+.dapp-workspace section[id] {
+  scroll-margin-top: 24px;
+}
+@media (max-width: 850px) {
+  .dapp-workspace > header {
+    gap: 14px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 76px;
+    padding: 16px 24px;
+  }
+  .dapp-workspace .dapp-nav {
+    order: 3;
+    width: 100%;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .dapp-workspace .wallet-actions {
+    margin-left: auto;
+  }
+}
+@media (max-width: 650px) {
+  .dapp-workspace > header {
+    padding: 16px;
+  }
+  .dapp-workspace .brand {
+    font-size: 22px;
+  }
+  .dapp-workspace .wallet-actions {
+    flex-wrap: wrap;
+  }
+  .dapp-workspace .wallet-adapter-button {
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+  .dapp-workspace .workspace-content {
+    padding: 24px 16px 36px;
+  }
+  .dapp-workspace .workspace-hero {
+    flex-wrap: wrap;
+    gap: 18px;
+    padding-bottom: 22px;
+  }
+  .workspace-hero-note {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .dapp-workspace h1 {
+    font-size: 28px;
+  }
+  .dapp-workspace .workspace-card {
+    padding: 20px;
+  }
+  .workspace-metrics {
+    grid-template-columns: 1fr;
+  }
+  .workspace-metrics > div {
+    padding: 16px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+  .workspace-metrics > div:last-child {
+    border-bottom: 0;
+  }
+  .workspace-metrics strong {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    margin: 0;
+    align-self: center;
+    font-size: 28px;
+  }
+  .workspace-metrics small {
+    margin-top: 6px;
+  }
+  .dapp-workspace .project-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .dapp-workspace .project-row > span:last-child {
+    margin-left: 51px;
+  }
+  .dapp-workspace .escrow-panel button:not(.secondary) {
+    width: 100%;
+  }
+  .dapp-workspace .editor-milestone {
+    padding: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dapp-workspace * {
+    transition: none !important;
+  }
+}

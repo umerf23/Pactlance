@@ -7,6 +7,9 @@ import bs58 from "bs58";
 import { browserSupabase } from "@/lib/supabase/client";
 import { ProjectEditor } from "./project-editor";
 import { AgreementView } from "./agreement-view";
+import { EscrowPanel } from "./escrow-panel";
+import { EvidencePanel } from "./evidence-panel";
+import { OperationsDashboard } from "./operations-dashboard";
 import { agreementCommitment } from "@/lib/agreements/crypto";
 import {
   acceptanceMessage,
@@ -78,6 +81,7 @@ export function Workspace() {
   const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
+  const [evidenceIndex, setEvidenceIndex] = useState(0);
   const authenticated = !!session?.user && session.user.wallet === address;
   const refreshSession = useCallback(async () => {
     const response = await fetch("/api/session", { cache: "no-store" });
@@ -275,27 +279,60 @@ export function Workspace() {
       (filter === "client" ? p.client_wallet : p.freelancer_wallet) === address,
   );
   return (
-    <div className="live-workspace">
+    <div className="live-workspace dapp-workspace">
       <header>
         <Link className="brand" href="/">
+          <span className="workspace-brand-icon" aria-hidden="true">
+            p
+          </span>
           pactlance<span className="brand-dot">.</span>
         </Link>
+        <nav className="dapp-nav" aria-label="Workspace navigation">
+          <button
+            type="button"
+            aria-current={!detail ? "page" : undefined}
+            onClick={() => {
+              setDetail(null);
+              setCreating(false);
+              setEditing(false);
+            }}
+          >
+            Projects
+          </button>
+          {detail ? (
+            <>
+              <a href="#project-escrow">Escrow</a>
+              <a href="#project-evidence">Evidence</a>
+            </>
+          ) : null}
+          <Link href="/">Demo</Link>
+        </nav>
         <div className="wallet-actions">
-          <Link href="/">Sample project</Link>
           {session?.configured ? <WalletButton /> : null}
         </div>
       </header>
       <main className="workspace-content">
-        <div className="workspace-heading">
+        <div className="workspace-heading workspace-hero">
           <div>
-            <p className="eyebrow">PHASE 03 · SHARED WORKSPACE</p>
-            <h1>Agree before you begin.</h1>
+            <p className="eyebrow">PACTLANCE / WORKSPACE</p>
+            <h1>
+              {detail
+                ? "Project workspace"
+                : authenticated
+                  ? "Your projects"
+                  : "Milestone payments. On chain."}
+            </h1>
             <p className="subtitle">
-              Private projects. Clear milestones. Two signatures on the same
-              terms.
+              Agree on terms. Fund one milestone at a time. Settle on Solana.
             </p>
           </div>
-          <span className="network">Solana devnet</span>
+          <div className="workspace-hero-note">
+            <span className="network">
+              <i aria-hidden="true" />
+              Solana devnet
+            </span>
+            <span>TEST tokens · no monetary value</span>
+          </div>
         </div>
         {error ? (
           <p className="error-message" role="alert">
@@ -314,8 +351,8 @@ export function Workspace() {
               backend. They are not active on this deployment yet.
             </p>
             <p>
-              The Phase 3 interface and API are built. Until setup is complete,
-              no sign-in or project save is simulated.
+              Wallet sign-in and private project storage are implemented.
+              Complete the backend setup to use this workspace.
             </p>
             <Link className="secondary" href="/">
               Explore the sample project
@@ -323,13 +360,14 @@ export function Workspace() {
             <details>
               <summary>Setup requirements for the project owner</summary>
               <ol>
-                <li>Apply the Phase 3 database migration in Supabase.</li>
+                <li>Apply the repository database migrations in Supabase.</li>
                 <li>
                   Enable Solana Web3 sign-in and allow this site’s origin.
                 </li>
                 <li>
                   Set the Supabase URL, publishable key and server-only
-                  service-role key in Vercel, then redeploy.
+                  service-role key in the app environment, then restart or
+                  redeploy.
                 </li>
               </ol>
               <p>Never paste secret keys or wallet seed phrases into chat.</p>
@@ -338,7 +376,11 @@ export function Workspace() {
         ) : null}
         {session?.configured && !authenticated ? (
           <section className="workspace-card sign-in-panel">
-            <h2>Sign in with your wallet</h2>
+            <span className="signin-emblem" aria-hidden="true">
+              ↗
+            </span>
+            <p className="eyebrow">WALLET AUTHENTICATION</p>
+            <h2>Connect. Verify. Get to work.</h2>
             <p>
               First connect a Solana wallet, then sign a message to verify
               ownership. Connecting alone does not sign you in.
@@ -365,8 +407,17 @@ export function Workspace() {
         {authenticated && session?.user ? (
           <>
             <div className="session-strip">
-              <span>
-                Signed in: <code>{session.user.wallet}</code>
+              <span className="session-identity">
+                <span className="session-avatar" aria-hidden="true">
+                  {(name.trim() || "W").slice(0, 1).toUpperCase()}
+                </span>
+                <span>
+                  <strong>{name.trim() || "Wallet workspace"}</strong>
+                  <code title={session.user.wallet}>
+                    {session.user.wallet.slice(0, 6)}…
+                    {session.user.wallet.slice(-6)}
+                  </code>
+                </span>
               </span>
               <button className="text-button" onClick={signOut}>
                 Sign out
@@ -390,19 +441,94 @@ export function Workspace() {
                 }}
               />
             ) : detail ? (
-              <AgreementView
-                key={`${detail.project.id}-${detail.project.current_version}`}
-                detail={detail}
-                wallet={session.user.wallet}
-                onAccept={accept}
-                onEdit={() => setEditing(true)}
-                onBack={() => setDetail(null)}
-              />
+              <>
+                <AgreementView
+                  key={`${detail.project.id}-${detail.project.current_version}`}
+                  detail={detail}
+                  wallet={session.user.wallet}
+                  onAccept={accept}
+                  onEdit={() => setEditing(true)}
+                  onBack={() => setDetail(null)}
+                />
+                <section id="project-evidence" className="workspace-card">
+                  <label>
+                    Milestone evidence
+                    <select
+                      value={Math.min(
+                        evidenceIndex,
+                        detail.agreement.terms.milestones.length - 1,
+                      )}
+                      onChange={(e) => setEvidenceIndex(Number(e.target.value))}
+                    >
+                      {detail.agreement.terms.milestones.map((m, i) => (
+                        <option key={m.id} value={i}>
+                          {i + 1}. {m.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </section>
+                <EvidencePanel
+                  key={`${detail.project.id}:${detail.agreement.version}:${evidenceIndex}`}
+                  projectId={detail.project.id}
+                  version={detail.agreement.version}
+                  index={Math.min(
+                    evidenceIndex,
+                    detail.agreement.terms.milestones.length - 1,
+                  )}
+                  canUpload={true}
+                  freelancer={
+                    session.user.wallet === detail.project.freelancer_wallet
+                  }
+                />
+                <EscrowPanel
+                  key={`${detail.project.id}:${session.user.wallet}`}
+                  projectId={detail.project.id}
+                />
+                <OperationsDashboard
+                  key={detail.project.id}
+                  wallet={session.user.wallet}
+                  projectId={detail.project.id}
+                />
+              </>
             ) : (
               <>
-                <section className="workspace-card">
+                <div
+                  className="workspace-metrics"
+                  aria-label="Project overview"
+                >
+                  <div>
+                    <span>YOUR PROJECTS</span>
+                    <strong>{projects.length}</strong>
+                    <small>Private agreements in your workspace</small>
+                  </div>
+                  <div>
+                    <span>AS FREELANCER</span>
+                    <strong>
+                      {projects
+                        .filter((p) => p.freelancer_wallet === address)
+                        .length.toString()
+                        .padStart(2, "0")}
+                    </strong>
+                    <small>Work you deliver</small>
+                  </div>
+                  <div>
+                    <span>AS CLIENT</span>
+                    <strong>
+                      {projects
+                        .filter((p) => p.client_wallet === address)
+                        .length.toString()
+                        .padStart(2, "0")}
+                    </strong>
+                    <small>Work you commission</small>
+                  </div>
+                </div>
+                <section className="workspace-card project-list-card">
                   <div className="workspace-heading">
-                    <h2>Your projects</h2>
+                    <div>
+                      <p className="eyebrow">WORKSPACE OVERVIEW</p>
+                      <h2>Your projects</h2>
+                    </div>
                     <button
                       className="primary compact"
                       onClick={() => setCreating(true)}
@@ -429,14 +555,19 @@ export function Workspace() {
                         key={project.id}
                         onClick={() => openProject(project.id)}
                       >
-                        <span>
-                          <strong>{project.title}</strong>
-                          <small>
-                            {project.freelancer_wallet === address
-                              ? "Freelancer"
-                              : "Client"}{" "}
-                            · version {project.current_version}
-                          </small>
+                        <span className="project-row-main">
+                          <span className="project-row-icon" aria-hidden="true">
+                            {project.title.slice(0, 1).toUpperCase()}
+                          </span>
+                          <span>
+                            <strong>{project.title}</strong>
+                            <small>
+                              {project.freelancer_wallet === address
+                                ? "Freelancer"
+                                : "Client"}{" "}
+                              · version {project.current_version}
+                            </small>
+                          </span>
                         </span>
                         <span>Review agreement ↗</span>
                       </button>
@@ -452,6 +583,10 @@ export function Workspace() {
                     </div>
                   )}
                 </section>
+                <OperationsDashboard
+                  key={session.user.wallet}
+                  wallet={session.user.wallet}
+                />
                 <section className="workspace-card">
                   <h2>Your profile</h2>
                   <label>
@@ -476,7 +611,8 @@ export function Workspace() {
           </>
         ) : null}
         <footer>
-          Off-chain test agreements only. Escrow funding begins in Phase 4.
+          Private agreements and evidence. Escrow actions use Solana devnet TEST
+          tokens.
         </footer>
       </main>
     </div>

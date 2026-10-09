@@ -64,13 +64,13 @@ export function ProjectPreview() {
                 together.
               </p>
             </div>
-            <span className="phase-label">PHASE 02 / FOUNDATION</span>
+            <span className="phase-label">DEVNET PROTOTYPE</span>
           </div>
           <div className="notice">
             <strong>Development preview</strong>
             <span>
-              Sample data only. Wallet sign-in and escrow payments are not
-              connected.
+              This page uses sample data. Open the workspace for wallet sign-in
+              and escrow actions. Devnet deployment setup is required.
             </span>
           </div>
           <section className="stats" aria-label="Sample project totals">
@@ -182,8 +182,8 @@ export function ProjectPreview() {
                     </div>
                   </dl>
                   <div className="action-note">
-                    Wallet authentication and funding will be implemented in
-                    Phases 3–4.
+                    Open the workspace to accept real project terms and use devnet
+                    escrow after deployment setup.
                   </div>
                   <button
                     className="primary"
@@ -240,23 +240,23 @@ export function ProjectPreview() {
           <section className="roadmap" id="roadmap">
             <div>
               <p className="eyebrow">BUILDING PACTLANCE</p>
-              <h3>A foundation for protected work.</h3>
+              <h3>Devnet integration and verification.</h3>
               <p>
                 Multi-milestone projects remain at the heart of the product.
               </p>
             </div>
             <ol>
               <li className="done">
-                01 <span>Product specification</span>
+                01–03 <span>Foundation, wallets & agreements</span>
+              </li>
+              <li className="done">
+                04–06 <span>Escrow, settlements & evidence</span>
               </li>
               <li className="current">
-                02 <span>Development foundation</span>
+                07 <span>Devnet integration · live verification pending</span>
               </li>
               <li>
-                03 <span>Wallets & agreements</span>
-              </li>
-              <li>
-                04–08 <span>Escrow, protection & validation</span>
+                08 <span>User trials & submission</span>
               </li>
             </ol>
           </section>

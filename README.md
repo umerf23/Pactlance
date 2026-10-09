@@ -1,71 +1,66 @@
-# Phase 3 update
-
-Wallet sign-in, private projects, multi-milestone agreements and version-bound signatures are implemented. See [Phase 3 setup and verification](docs/phase-3.md) for backend activation and remaining hosted verification. Escrow funding is Phase 4.
-
 # Pactlance
 
 Milestone payment protection for Pakistani freelancers and overseas clients.
 Previously called FreelancePay in the planning documents.
 
-## Current status — Phase 2
+## Current progress
 
-Working Next.js development preview with a two-milestone project, agreement outline,
-shared TypeScript models, integer amount helpers, tests and CI. The Anchor scaffold
-contains a signed `ping` instruction and settlement arithmetic unit tests only.
-**No wallet authentication, real escrow, token transfers, Supabase backend or devnet deployment exists yet.**
+Wallet sign-in, profiles, private projects and immutable multi-milestone agreements are implemented. The Solana escrow contract and client support sequential funding, separate vaults, delivery commitments, approval, review-timeout claims, non-delivery refunds, disputes, exclusive primary/backup reviewer authority, mutual allocations, cancellation and jointly accepted revisions of future work.
 
-## Run the web application
+The contract is verified locally. Private evidence uploads/links, reviewer evidence screens, in-app reminders, support notes and transaction history are implemented. Phase 7 payment/settlement screens, joint signatures, finalized chain reconciliation, missed-event recovery, a durable claim worker and deployment tooling are implemented. The user has reported successful devnet deployment and browser escrow creation. Full settlement, wallet compatibility and recovery verification remain pending and have been deferred until the end of development. Vercel deployment is paused. Phase 8 usability and submission preparation is in progress.
 
-Install Node.js from `.nvmrc` (24.19.0), then:
+- [Phase 3 setup and verification](docs/phase-3.md)
+- [Phase 4 escrow verification](docs/phase-4.md)
+- [Phase 5 settlement rules and verification](docs/phase-5.md)
+- [Phase 6 evidence and operations](docs/phase-6.md)
+- [Phase 7 recovery, deployment and remaining live verification](docs/phase-7.md)
+- [Phase 8 usability, validation and deferred test checklist](docs/phase-8.md)
+- [Architecture and trust boundaries](docs/architecture-and-trust.md)
+- [Demo and submission outline](docs/demo-script.md)
+
+## Run the application
+
+Use Node.js 24.19.0 from `.nvmrc`:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. No credentials are required for the preview.
-Copy `.env.example` to `.env.local` when beginning the integrations; never commit secrets.
+Open http://localhost:3000. Configure `.env.local` from `.env.example` and follow the Phase 3 instructions for wallet authentication and the Supabase backend. Never commit secrets.
 
 ```sh
-npm run check       # ESLint, TypeScript, unit tests, production build
-npm run doctor      # Reports missing development tools; nonzero if any are missing
-npm run test:program # Native Rust unit tests; Rust 1.90.0 required
+npm run check        # ESLint, TypeScript, application tests, production build
+npm run test:program # Native Rust tests; Rust 1.90.0
 ```
 
-## Structure
+## Verify escrow
 
-- `src/app/`: Next.js App Router and health endpoint.
-- `src/components/`: responsive project preview.
-- `src/lib/`: shared models, sample data, token units and configuration validation.
-- `tests/`: TypeScript foundation tests.
-- `contracts/`: Anchor workspace, pinned versions and native tests.
-- `docs/`: product scope, Phase 1 specification and setup/validation notes.
-- `.github/workflows/ci.yml`: web and native program checks.
+With Agave 2.3.0 installed:
 
-## Solana development
+```sh
+cargo-build-sbf --tools-version v1.56 --manifest-path contracts/programs/pactlance/Cargo.toml -- --locked
+npm run test:escrow
+```
 
-See `docs/development.md`. Anchor 0.32.2 and Solana 2.3.0 are the selected baseline.
-The client uses `@anchor-lang/core` with web3.js v1. The program's committed address
-is a scaffold identifier, **not a deployed address**. Generate local keys and run
-`anchor keys sync` before building/deploying. Keep keypair files untracked.
+The runtime suite executes the compiled program and SPL Token instructions in LiteSVM, including adversarial settlement and deadline cases. It fails when the binary is absent. This is local runtime verification; it does not establish devnet or production readiness.
 
-Native `cargo test` does not prove that SBF builds or validator integration work.
-`anchor build` and local-validator transaction tests are separate gates.
+The committed program ID and public manifest record the user's devnet deployment. The Rust declaration, Anchor configuration and IDL share that identity. Keep the matching private keys backed up and untracked; a clone does not contain deployment authority. Use `npm run deploy:devnet` only with the matching local identities, or a fresh checkout without the existing manifest for a separate deployment. Phase 5 changes account layouts; reset old local ledgers.
 
-## Full scope retained
+## Repository
 
-Projects contain multiple sequential milestones, with one active funded milestone
-at a time and a distinct vault per milestone. Later phases add wallet authentication,
-both-party agreement acceptance, deposits, private delivery, release, timeout claims,
-non-delivery refunds, mutual settlement/cancellation, disputes, primary/backup
-reviewers, history, reminders, reconciliation and support views.
+- `src/app/`, `src/components/`: application and APIs.
+- `src/lib/agreements/`: terms, commitments and agreement signatures.
+- `src/lib/escrow/`: verified account decoding and instruction builders.
+- `contracts/`: Anchor contract, generated IDL and native tests.
+- `tests/`: application/client tests.
+- `integration/`: SBF/SPL Token runtime tests.
+- `supabase/`: database migrations.
+- `docs/`: blueprint, phase specifications, setup and verification.
+- `.github/workflows/ci.yml`: web, native contract and runtime checks.
 
-TEST tokens are only for devnet demonstrations. PKR cash-out and card funding are
-later work. Frontend eligibility helpers are presentation logic, never authority
-to move money. All payment rules must ultimately be enforced by the program.
+## Full project scope
 
-## Next phase
+A project has multiple sequential milestones, one active funded milestone at a time, and a distinct vault per milestone. The remaining Phase 7 gate is complete end-to-end devnet and recovery verification. Phase 8 covers usability, recorded user trials and submission assets; unfinished tests remain on the final checklist.
 
-Phase 3: wallet sign-in, authenticated project membership, versioned agreements,
-private database policies and role-based dashboards. Refer to the original blueprint
-and Phase 1 workbook in `docs/` before changing product scope.
+Prototype tokens are labelled TEST tokens. Real funds, PKR cash-out and card funding are later work. Database caches and frontend eligibility helpers cannot authorize token movements. The Solana program enforces payment rules; claims need an actual transaction submitted by a user or worker.
