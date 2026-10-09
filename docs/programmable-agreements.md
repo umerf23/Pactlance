@@ -4,11 +4,11 @@
 
 PAP is an optional structured protocol inside existing `agreements.terms`. Existing membership, immutable agreement versions, wallet consent and evidence storage are reused. Legacy agreements and hashes remain compatible. Switching a saved project between legacy escrow and PAP is rejected.
 
-**PAP executes off-chain and does not transfer funds.** The existing devnet contract enforces fixed single-submission and timeout rules. It cannot enforce configurable revisions, human-review timeouts or acknowledgement prerequisites. Binding PAP to that contract is rejected and the legacy claim worker skips PAP projects. Legacy escrow retains finalized-chain reconciliation. No Rust, IDL, account-layout change, deployment or token transfer is part of this feature. Never use mainnet during development.
+**PAP workflow rules execute off-chain.** The explicit devnet payment adapter in this branch extends the existing escrow with a separate payment profile, wallet-authorized payouts and finalized payment reconciliation. It does not automatically transfer funds on a review timer. Production activation requires a reviewed contract upgrade, capability verification and a server rollout flag. See [PAP payments and operator rollout](pap-payments.md).
 
-`PAYMENT_PENDING` means accepted work or an allocation eligible for a future compatible adapter, never `PAID`. Agreement `COMPLETED` describes completed work decisions while payment may remain outstanding. A refund/allocation proposal is an off-chain decision, not an executed transfer. Cancellation uses authenticated timestamped consent, clearly distinct from wallet signatures. Activation and amendments use both existing wallet signatures bound to the exact version/hash/origin.
+`PAYMENT_PENDING` means an eligible allocation, never a completed payment. `PAID`/`REFUNDED` require verified finalized chain account and transaction-event evidence; payment references remain outside the immutable terms hash. Agreement `COMPLETED` describes work decisions while payment may remain outstanding. Cancellation clicks are authenticated timestamped consent, distinct from wallet signatures. On-chain cancellation/revision and mutual settlement require their own wallet authorization. Activation/amendments use the existing message signatures bound to exact version/hash/origin; those do not replace escrow acceptance.
 
-The server and database are trusted for identity, clocks, evidence validation and workflow decisions. This is not a trustless executor or proof of legal enforceability.
+The server and database are trusted for identity, clocks, evidence validation and workflow decisions. The escrow enforces signatures, fixed recipients, precise amounts and replay protection. This is not trustless execution of all PAP rules or proof of legal enforceability.
 
 ## Creation and execution
 
@@ -21,7 +21,7 @@ The server and database are trusted for identity, clocks, evidence validation an
 7. The client acknowledges the review notice, accepts work, requests an available revision or opens a dispute. Revisions preserve the original delivery and first submission's review deadline.
 8. Expiry defaults to human review. An explicitly agreed automatic-acceptance policy creates payment eligibility only after its prerequisites; required acknowledgement must come from the authenticated client. A freelancer's claim of an email notification is insufficient. Disputed work never becomes payable from a timer.
 9. Reviewers find active PAP assignments in workspace operations. Only the primary reviewer before the handoff, then the backup after it, can resolve allocations. Exact base-unit refunds are bounded by the milestone amount; the balance belongs to the original freelancer.
-10. Cancellation requires independent participant consent, cannot undo completed work and preserves accepted allocations. None of these workflow actions moves tokens.
+10. Cancellation requires independent participant consent, cannot undo completed work and preserves accepted allocations. These workflow actions alone do not move tokens. The separate payment workspace requires explicit chain authorization.
 
 Drafts are editable locally; saving appends immutable proposals. Execution remains pinned to the previous active version while a new proposal awaits both signatures. Activation cannot replace ongoing or disputed work. Completed milestone amounts, criteria, evidence requirements and per-milestone policies cannot change retroactively. Previous versions, hashes, consent and transitions remain append-only.
 
@@ -39,7 +39,7 @@ PAP version/serialization metadata is included in the hash. Mutable execution, c
 
 ## State machine and declarative rules
 
-Execution states: `ACTIVE`, `DISPUTED`, `COMPLETED`, `CANCELLED`. Proposal/awaiting-consent states derive from immutable versions and signatures. Milestones: `PENDING`, `IN_PROGRESS`, `UNDER_REVIEW`, `CHANGES_REQUESTED`, `DISPUTED`, `PAYMENT_PENDING`, `CANCELLED`. Submission enters review atomically; rejection uses the agreed revision/dispute path. Payment completion is absent until a verified adapter exists.
+Execution states: `ACTIVE`, `DISPUTED`, `COMPLETED`, `CANCELLED`. Proposal/awaiting-consent states derive from immutable versions and signatures. Milestones: `PENDING`, `IN_PROGRESS`, `UNDER_REVIEW`, `CHANGES_REQUESTED`, `DISPUTED`, `PAYMENT_PENDING`, `CANCELLED`. Submission enters review atomically; rejection uses the agreed revision/dispute path. `PAID` and `REFUNDED` are internal reconciliation states, unavailable as browser commands.
 
 `src/lib/pap/engine.ts` centralizes authorization, version, deadlines, evidence, revisions, consent, cancellation and reviewer authority. Facts come from server reads and the server clock. Clients cannot inject state, facts, approvals or recipients.
 
@@ -63,4 +63,4 @@ Run `npm run check`. Tests cover templates and rule injection; NFC/hash/precisio
 
 PAP tests: `tests/pap-engine.test.ts`, `tests/pap-api.test.ts`, `tests/pap-database.test.ts`, `tests/pap-worker.test.ts`.
 
-The earlier local checkout was unavailable after the session resumed. This branch restores the implementation from the conversation onto current GitHub `main` and reruns verification; it is a new recovery commit, not the inaccessible earlier local commit. Live browser-wallet flow is not claimed: verify two-party consent, acknowledgement, revisions, reviewer evidence access, amendment/cancellation after applying the migration and deploying the reviewed feature. A future payment adapter requires devnet contract tests, migration/compatibility review, explicit deployment authorization and finalized-chain reconciliation before exposing transfers.
+The earlier local checkout was unavailable after the session resumed. This branch restores the implementation from the conversation onto current GitHub `main` and reruns verification; it is a new recovery commit, not the inaccessible earlier local commit. Live browser-wallet flow is not claimed: verify two-party consent, acknowledgement, revisions, reviewer evidence access, amendment/cancellation after applying the migration and deploying the reviewed feature. The explicit adapter has local SBF tests and finalized-chain reconciliation. Its rollout still requires the documented reviewer-access migration, explicit devnet upgrade authorization and live wallet verification.

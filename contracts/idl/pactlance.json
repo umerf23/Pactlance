@@ -207,6 +207,107 @@
       "args": []
     },
     {
+      "name": "approve_pap_milestone",
+      "discriminator": [
+        154,
+        141,
+        255,
+        206,
+        163,
+        5,
+        75,
+        126
+      ],
+      "accounts": [
+        {
+          "name": "client",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true,
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "milestone"
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipient",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "submission",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "cancel_remaining",
       "discriminator": [
         41,
@@ -342,6 +443,89 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "create_pap_project",
+      "discriminator": [
+        41,
+        76,
+        198,
+        209,
+        219,
+        26,
+        55,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  106,
+                  101,
+                  99,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "args.client"
+              },
+              {
+                "kind": "arg",
+                "path": "args.id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ProjectTerms"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "create_project",
@@ -643,7 +827,7 @@
         },
         {
           "name": "program",
-          "address": "3oh6fZaHMsHY176Kbb2LGRsqW1nRq7UBpJaWirMNioxP"
+          "address": "9T95KC5YSQ7LV2KwUcY7SyBu6cYF6Urv8fXd7kYaWNpL"
         },
         {
           "name": "program_data"
@@ -665,6 +849,65 @@
                   102,
                   105,
                   103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_pap_capability",
+      "discriminator": [
+        236,
+        61,
+        113,
+        187,
+        102,
+        184,
+        36,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "program",
+          "address": "9T95KC5YSQ7LV2KwUcY7SyBu6cYF6Urv8fXd7kYaWNpL"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "capability",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  112,
+                  45,
+                  99,
+                  97,
+                  112,
+                  97,
+                  98,
+                  105,
+                  108,
+                  105,
+                  116,
+                  121
                 ]
               }
             ]
@@ -1018,6 +1261,52 @@
       ]
     },
     {
+      "name": "revise_pap_project",
+      "discriminator": [
+        5,
+        34,
+        189,
+        74,
+        11,
+        146,
+        253,
+        180
+      ],
+      "accounts": [
+        {
+          "name": "client",
+          "signer": true
+        },
+        {
+          "name": "freelancer",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "previous_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ProjectTerms"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "revise_project",
       "discriminator": [
         74,
@@ -1129,6 +1418,73 @@
           }
         }
       ]
+    },
+    {
+      "name": "submit_pap_delivery",
+      "discriminator": [
+        98,
+        81,
+        176,
+        252,
+        251,
+        193,
+        107,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "freelancer",
+          "signer": true
+        },
+        {
+          "name": "project",
+          "relations": [
+            "milestone"
+          ]
+        },
+        {
+          "name": "milestone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  108,
+                  101,
+                  115,
+                  116,
+                  111,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "project"
+              },
+              {
+                "kind": "account",
+                "path": "milestone.index",
+                "account": "Milestone"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1169,6 +1525,19 @@
         247,
         142,
         19
+      ]
+    },
+    {
+      "name": "PapCapability",
+      "discriminator": [
+        13,
+        161,
+        106,
+        91,
+        123,
+        235,
+        163,
+        162
       ]
     }
   ],
@@ -1631,6 +2000,18 @@
           {
             "name": "cancel_remaining",
             "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PapCapability",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
           }
         ]
       }

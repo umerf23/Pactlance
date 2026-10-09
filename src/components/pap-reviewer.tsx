@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import type { AgreementTerms } from "@/lib/agreements/schema";
 import { operationalAPI, EvidencePanel } from "./evidence-panel";
 import { formatTokenAmount, parseTokenAmount } from "@/lib/domain";
+import { EscrowPanel } from "./escrow-panel";
 type Assignment = {
   projectId: string;
   version: number;
   terms: AgreementTerms;
   revision: number;
   indices: number[];
+  allocationPendingIndices?: number[];
 };
 export function PapReviewer({ wallet }: { wallet: string }) {
   const [assignments, setAssignments] = useState<Assignment[]>([]),
@@ -52,8 +54,16 @@ export function PapReviewer({ wallet }: { wallet: string }) {
         clientRefundUnits: units,
         reason,
       });
-      setAssignments((await operationalAPI("/api/pap")).assignments);
-      setSelected("");
+      const refreshed = (await operationalAPI("/api/pap"))
+        .assignments as Assignment[];
+      setAssignments(refreshed);
+      if (
+        !refreshed.some(
+          (a) =>
+            a.projectId === pair.a.projectId && a.indices.includes(pair.index),
+        )
+      )
+        setSelected("");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -140,13 +150,25 @@ export function PapReviewer({ wallet }: { wallet: string }) {
               onChange={(e) => setReason(e.target.value)}
             />
           </label>
-          <button
-            className="primary"
-            disabled={busy || reason.trim().length < 10}
-            onClick={resolve}
-          >
-            Record allocation decision
-          </button>
+          {!pair.a.allocationPendingIndices?.includes(pair.index) ? (
+            <button
+              className="primary"
+              disabled={busy || reason.trim().length < 10}
+              onClick={resolve}
+            >
+              Record allocation decision
+            </button>
+          ) : (
+            <p role="status">
+              Allocation decision recorded. In the payment workspace, enter that
+              exact client refund and authorize the on-chain resolution when
+              this wallet is eligible.
+            </p>
+          )}
+          <EscrowPanel
+            key={`${pair.a.projectId}:${wallet}`}
+            projectId={pair.a.projectId}
+          />
         </>
       ) : null}
       {error ? (

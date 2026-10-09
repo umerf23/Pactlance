@@ -18,13 +18,14 @@ export async function readEscrow(
   records: AgreementRecord[],
   program: string,
   mint: string,
+  papEnabled = false,
 ) {
   await requireDevnet(connection);
   if (!records.length) throw new Error("Agreement history unavailable.");
   const bindings = await Promise.all(
     [...records]
       .sort((a, b) => b.version - a.version)
-      .map((r) => bindAgreement(r, program, mint)),
+      .map((r) => bindAgreement(r, program, mint, papEnabled)),
   );
   const latest = bindings[0],
     longest = bindings.reduce((a, b) =>
@@ -40,10 +41,32 @@ export async function readEscrow(
       mintKey,
       d.project,
       ...pdas.flatMap((p) => [p.milestone, p.vault]),
+      ...(latest.terms.protocol
+        ? [
+            PublicKey.findProgramAddressSync(
+              [Buffer.from("pap-capability")],
+              d.program,
+            )[0],
+          ]
+        : []),
     ],
     { commitment: "finalized" },
   );
   const [programAccount, config, mintAccount, project] = value;
+  if (latest.terms.protocol) {
+    const capability = value[4 + pdas.length * 2];
+    if (
+      !capability ||
+      capability.executable ||
+      !capability.owner.equals(d.program) ||
+      capability.data.length !== 9 ||
+      capability.data[8] !== 1 ||
+      !capability.data
+        .subarray(0, 8)
+        .equals(await discriminator("account", "PapCapability"))
+    )
+      throw new Error("PAP_CAPABILITY_UNAVAILABLE");
+  }
   if (!programAccount?.executable)
     throw new Error("Escrow program is not deployed.");
   if (

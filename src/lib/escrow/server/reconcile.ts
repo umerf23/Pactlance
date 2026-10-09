@@ -26,11 +26,25 @@ export async function reconcileProject(id: string) {
     .eq("project_id", id)
     .order("version", { ascending: false });
   if (error) throw new Error("Agreement history unavailable.");
+  let selected = records as AgreementRecord[];
+  if (selected[0]?.terms.protocol) {
+    const { data: runtime, error } = await admin
+      .from("agreement_execution")
+      .select("active_version")
+      .eq("project_id", id)
+      .maybeSingle();
+    if (error || !runtime)
+      throw new Error(
+        "Activate the jointly signed PAP agreement before creating escrow.",
+      );
+    selected = selected.filter((r) => r.version <= runtime.active_version);
+  }
   const snapshot = await readEscrow(
     connection,
-    records as AgreementRecord[],
+    selected,
     program,
     mint,
+    process.env.PAP_PAYMENTS_ENABLED === "true",
   );
   const serialized = jsonSafe({
     ...snapshot,
@@ -54,6 +68,10 @@ export async function reconcileProject(id: string) {
   return { snapshot, connection, admin };
 }
 const names = [
+  "create_pap_project",
+  "submit_pap_delivery",
+  "approve_pap_milestone",
+  "revise_pap_project",
   "create_project",
   "accept_project",
   "fund_milestone",

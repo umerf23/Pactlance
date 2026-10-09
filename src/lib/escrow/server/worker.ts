@@ -24,6 +24,8 @@ export async function runProjectWorker(projectId: string) {
   const context = await reconcileProject(projectId);
   await reconcileHistory(projectId, context);
   const { snapshot, connection, admin } = context;
+  if (snapshot.agreement.terms.protocol)
+    return { reconciled: true, claims: "pap_explicit_authorization" };
   const unresolved = await admin
     .from("claim_outbox")
     .select("*")

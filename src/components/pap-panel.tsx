@@ -6,6 +6,7 @@ import type { PapCommand } from "@/lib/pap/schema";
 import type { EvidenceRecord } from "@/lib/evidence/schema";
 import { formatTokenAmount } from "@/lib/domain";
 import { EvidencePanel } from "./evidence-panel";
+import { EscrowPanel } from "./escrow-panel";
 type Timeline = {
   id: string;
   action: string;
@@ -64,6 +65,7 @@ export function PapPanel({
     [evidence, setEvidence] = useState<EvidenceRecord[]>([]),
     [selectedIndex, setIndex] = useState(0),
     [now, setNow] = useState(Date.now);
+  const [notice, setNotice] = useState("");
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -168,6 +170,19 @@ export function PapPanel({
       milestone &&
       ["IN_PROGRESS", "CHANGES_REQUESTED"].includes(milestone.state) &&
       now <= Date.parse(terms.milestones[index].deliveryDeadline);
+  const evidenceComplete = policy.deliverables.every((d) =>
+    d.requiredEvidenceTypes.every((type) =>
+      (deliveries[d.id] ?? []).some((id) => {
+        const e = evidence.find((item) => item.id === id);
+        return (
+          e?.status === "ready" &&
+          e.purpose === "delivery" &&
+          e.uploader_wallet === terms.freelancerWallet &&
+          (e.kind === "link" ? "link" : e.mime_type) === type
+        );
+      }),
+    ),
+  );
   let canActivate = false;
   if (snapshot)
     try {
@@ -185,191 +200,232 @@ export function PapPanel({
       canActivate = true;
     } catch {}
   return (
-    <section id="project-escrow" className="workspace-card">
-      <div className="workspace-heading">
-        <h2>Agreement execution</h2>
-        <button
-          className="secondary"
-          disabled={busy}
-          onClick={() => {
-            setError("");
-            api(`/api/pap?project=${id}`)
-              .then(setSnapshot)
-              .catch((e) => setError(e.message));
-          }}
-        >
-          Refresh protocol
-        </button>
-      </div>
-      <p className="notice">
-        Off-chain workflow. Accepted work and payment eligibility do not mean
-        funds were transferred. Payment execution is unavailable for this PAP
-        profile.
-      </p>
-      <p>
-        Status:{" "}
-        {execution?.status ??
-          (bothAccepted
-            ? "PROPOSED · ready to activate"
-            : "AWAITING_COUNTERPARTY")}{" "}
-        · active version {execution?.version ?? "none"}
-        {execution && execution.version !== detail.agreement.version
-          ? ` · amendment v${detail.agreement.version} awaits activation`
-          : ""}
-      </p>
-      {canActivate ? (
-        <button
-          className="primary"
-          disabled={busy}
-          onClick={() => act("activate")}
-        >
-          Activate jointly signed version {detail.agreement.version}
-        </button>
-      ) : null}
-      {snapshot ? (
-        <>
-          <label>
-            Milestone
-            <select
-              value={index}
-              onChange={(e) => setIndex(Number(e.target.value))}
-            >
-              {terms.milestones.map((m, i) => (
-                <option key={m.id} value={i}>
-                  {i + 1}. {m.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p>
-            {milestone?.state ?? "PENDING"} ·{" "}
-            {formatTokenAmount(BigInt(terms.milestones[index].amountUnits))}{" "}
-            TEST · {milestone?.revisions ?? 0}/{policy.revisionLimit} revisions
-          </p>
-          <p>
-            Delivery due: {terms.milestones[index].deliveryDeadline} · Review:{" "}
-            {policy.reviewHours} hours
-            {milestone?.reviewDueAt ? ` (ends ${milestone.reviewDueAt})` : ""}
-          </p>
-          {milestone?.humanReviewRequired ? (
-            <p className="notice">
-              Human review required. No automatic payment is authorized.
-            </p>
-          ) : null}
-          {policy.deliverables.map((d) => (
-            <div key={d.id}>
-              <h4>{d.title}</h4>
-              <p>Required: {d.requiredEvidenceTypes.join(", ")}</p>
-              {canSubmit
-                ? evidence
-                    .filter(
-                      (e) =>
-                        e.uploader_wallet === terms.freelancerWallet &&
-                        e.purpose === "delivery",
-                    )
-                    .map((e) => (
-                      <label className="check-label" key={e.id}>
-                        <input
-                          type="checkbox"
-                          checked={deliveries[d.id]?.includes(e.id) ?? false}
-                          onChange={(event) =>
-                            setDeliveries((old) => ({
-                              ...old,
-                              [d.id]: event.target.checked
-                                ? [...(old[d.id] ?? []), e.id]
-                                : (old[d.id] ?? []).filter((id) => id !== e.id),
-                            }))
-                          }
-                        />
-                        {e.title} · {e.kind === "link" ? "link" : e.mime_type}
-                      </label>
-                    ))
-                : null}
-            </div>
-          ))}
-          <div id="project-evidence">
-            <EvidencePanel
-              key={`${record.version}:${index}`}
-              projectId={id}
-              version={record.version}
-              index={index}
-              canUpload={true}
-              freelancer={wallet === terms.freelancerWallet}
-            />
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() =>
-                api(
-                  `/api/evidence?project=${id}&version=${record.version}&index=${index}`,
-                )
-                  .then((d) => setEvidence(d.evidence))
-                  .catch((e) => setError(e.message))
-              }
-            >
-              Refresh evidence selections
-            </button>
-          </div>
-          <label>
-            Reason / review notes
-            <textarea
-              value={reason}
-              minLength={10}
-              maxLength={2000}
-              onChange={(e) => setReason(e.target.value)}
-            />
-          </label>
-          <div className="button-row">
-            {Object.entries(labels)
-              .filter(([a]) => allowed(a as PapCommand["action"]))
-              .map(([a, label]) => (
-                <button
-                  className="secondary"
-                  disabled={busy}
-                  key={a}
-                  onClick={() => act(a as PapCommand["action"])}
-                >
-                  {label}
-                </button>
-              ))}
-            {canSubmit ? (
-              <button
-                className="primary"
-                disabled={busy}
-                onClick={() => act("submit")}
-              >
-                Submit verified evidence
-              </button>
-            ) : null}
-          </div>
-          <h3>Transition timeline</h3>
-          {snapshot.timeline.length ? (
-            <ol>
-              {snapshot.timeline.map((e) => (
-                <li key={e.id}>
-                  <strong>
-                    {e.action} · v{e.agreement_version}
-                  </strong>
-                  <p>{e.reason}</p>
-                  <small>
-                    {e.created_at} · {e.actor}
-                    {e.rule_ids.length
-                      ? ` · rules: ${e.rule_ids.join(", ")}`
-                      : ""}
-                  </small>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p>No transitions yet.</p>
-          )}
-        </>
-      ) : null}
-      {error ? (
-        <p className="error-message" role="alert">
-          {error}
+    <>
+      <section id="project-escrow" className="workspace-card">
+        <div className="workspace-heading">
+          <h2>Agreement execution</h2>
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() => {
+              setError("");
+              setBusy(true);
+              setNotice("");
+              api(`/api/pap?project=${id}`)
+                .then((data) => {
+                  setSnapshot(data);
+                  setNotice(
+                    "Protocol refreshed. The current milestone status is shown below.",
+                  );
+                })
+                .catch((e) => setError(e.message))
+                .finally(() => setBusy(false));
+            }}
+          >
+            Refresh protocol
+          </button>
+        </div>
+        {notice && <p role="status">{notice}</p>}
+        <p className="notice">
+          Off-chain workflow. Accepted work and payment eligibility do not mean
+          funds were transferred. Use the payment workspace below to authorize
+          supported devnet payments; only finalized settlements are marked paid.
         </p>
-      ) : null}
-    </section>
+        <p>
+          Status:{" "}
+          {execution?.status ??
+            (bothAccepted
+              ? "PROPOSED · ready to activate"
+              : "AWAITING_COUNTERPARTY")}{" "}
+          · active version {execution?.version ?? "none"}
+          {execution && execution.version !== detail.agreement.version
+            ? ` · amendment v${detail.agreement.version} awaits activation`
+            : ""}
+        </p>
+        {canActivate ? (
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={() => act("activate")}
+          >
+            Activate jointly signed version {detail.agreement.version}
+          </button>
+        ) : null}
+        {snapshot ? (
+          <>
+            <label>
+              Milestone
+              <select
+                value={index}
+                onChange={(e) => setIndex(Number(e.target.value))}
+              >
+                {terms.milestones.map((m, i) => (
+                  <option key={m.id} value={i}>
+                    {i + 1}. {m.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p>
+              {milestone?.state ?? "PENDING"} ·{" "}
+              {formatTokenAmount(BigInt(terms.milestones[index].amountUnits))}{" "}
+              TEST · {milestone?.revisions ?? 0}/{policy.revisionLimit}{" "}
+              revisions
+            </p>
+            <p role="status">
+              {milestone?.state === "PENDING"
+                ? "Next: the freelancer starts this milestone."
+                : milestone?.state === "IN_PROGRESS" ||
+                    milestone?.state === "CHANGES_REQUESTED"
+                  ? "Next: the freelancer saves the required delivery evidence, refreshes evidence selections, selects it for each deliverable, and submits it for review."
+                  : milestone?.state === "UNDER_REVIEW"
+                    ? "Next: the client reviews the evidence and accepts, requests a permitted revision, or opens a dispute."
+                    : milestone?.state === "PAYMENT_PENDING"
+                      ? "Next: use the payment workspace below to publish the reviewed delivery and authorize the eligible allocation. No payment has been confirmed yet."
+                      : milestone?.paymentReference
+                        ? `Finalized devnet settlement: ${milestone.paymentReference.signature}`
+                        : "Refresh protocol to check the next permitted action."}
+            </p>
+            <p>
+              Delivery due: {terms.milestones[index].deliveryDeadline} · Review:{" "}
+              {policy.reviewHours} hours
+              {milestone?.reviewDueAt ? ` (ends ${milestone.reviewDueAt})` : ""}
+            </p>
+            {milestone?.humanReviewRequired ? (
+              <p className="notice">
+                Human review required. No automatic payment is authorized.
+              </p>
+            ) : null}
+            {policy.deliverables.map((d) => (
+              <div key={d.id}>
+                <h4>{d.title}</h4>
+                <p>Required: {d.requiredEvidenceTypes.join(", ")}</p>
+                {canSubmit
+                  ? evidence
+                      .filter(
+                        (e) =>
+                          e.uploader_wallet === terms.freelancerWallet &&
+                          e.purpose === "delivery",
+                      )
+                      .map((e) => (
+                        <label className="check-label" key={e.id}>
+                          <input
+                            type="checkbox"
+                            checked={deliveries[d.id]?.includes(e.id) ?? false}
+                            onChange={(event) =>
+                              setDeliveries((old) => ({
+                                ...old,
+                                [d.id]: event.target.checked
+                                  ? [...(old[d.id] ?? []), e.id]
+                                  : (old[d.id] ?? []).filter(
+                                      (id) => id !== e.id,
+                                    ),
+                              }))
+                            }
+                          />
+                          {e.title} · {e.kind === "link" ? "link" : e.mime_type}
+                        </label>
+                      ))
+                  : null}
+              </div>
+            ))}
+            <div id="project-evidence">
+              <EvidencePanel
+                key={`${record.version}:${index}`}
+                projectId={id}
+                version={record.version}
+                index={index}
+                canUpload={true}
+                freelancer={wallet === terms.freelancerWallet}
+              />
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() =>
+                  api(
+                    `/api/evidence?project=${id}&version=${record.version}&index=${index}`,
+                  )
+                    .then((d) => setEvidence(d.evidence))
+                    .catch((e) => setError(e.message))
+                }
+              >
+                Refresh evidence selections
+              </button>
+            </div>
+            <label>
+              Reason / review notes
+              <textarea
+                value={reason}
+                minLength={10}
+                maxLength={2000}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </label>
+            <div className="button-row">
+              {Object.entries(labels)
+                .filter(([a]) => allowed(a as PapCommand["action"]))
+                .map(([a, label]) => (
+                  <button
+                    className="secondary"
+                    disabled={busy}
+                    key={a}
+                    onClick={() => act(a as PapCommand["action"])}
+                  >
+                    {label}
+                  </button>
+                ))}
+              {canSubmit ? (
+                <button
+                  className="primary"
+                  disabled={busy || !evidenceComplete}
+                  onClick={() => act("submit")}
+                >
+                  Submit verified evidence
+                </button>
+              ) : null}
+            </div>
+            {canSubmit && !evidenceComplete && (
+              <p role="status">
+                Select completed delivery evidence for every required format
+                under each deliverable before submitting. Saving a file alone
+                does not select it.
+              </p>
+            )}
+            <h3>Transition timeline</h3>
+            {snapshot.timeline.length ? (
+              <ol>
+                {snapshot.timeline.map((e) => (
+                  <li key={e.id}>
+                    <strong>
+                      {e.action} · v{e.agreement_version}
+                    </strong>
+                    <p>{e.reason}</p>
+                    <small>
+                      {e.created_at} · {e.actor}
+                      {e.rule_ids.length
+                        ? ` · rules: ${e.rule_ids.join(", ")}`
+                        : ""}
+                    </small>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p>No transitions yet.</p>
+            )}
+          </>
+        ) : null}
+        {error ? (
+          <p className="error-message" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </section>
+      <EscrowPanel
+        projectId={id}
+        onReconciled={async () =>
+          setSnapshot(await api(`/api/pap?project=${id}`))
+        }
+      />
+    </>
   );
 }

@@ -92,6 +92,7 @@ beforeAll(async () => {
     "20261008054824_phase7_reconciliation.sql",
     "20261008060103_phase7_worker_hardening.sql",
     "20261009111636_programmable_agreements.sql",
+    "20261009174010_pap_payment_reviewer_access.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await admin();
@@ -299,4 +300,50 @@ it("restricts reviewer evidence and files to the disputed milestone", async () =
       0,
     );
   }
+});
+it("retains exclusive reviewer access only until a decided allocation is paid", async () => {
+  await admin();
+  const pending = structuredClone(state);
+  pending.milestones[0] = {
+    state: "PAYMENT_PENDING",
+    revisions: 0,
+    disputedAt: new Date(Date.now() - 25 * 3600000).toISOString(),
+    acceptedAt: new Date().toISOString(),
+    allocation: {
+      clientUnits: "0",
+      freelancerUnits: t.milestones[0].amountUnits,
+    },
+  };
+  await commit(
+    5,
+    "20000000-0000-4000-8000-000000000010",
+    "4".repeat(64),
+    pending,
+    "resolve",
+    wallets[3],
+  );
+  await user(3);
+  expect((await db.query("select * from public.evidence")).rows).toHaveLength(
+    1,
+  );
+  await user(2);
+  expect((await db.query("select * from public.evidence")).rows).toHaveLength(
+    0,
+  );
+  await admin();
+  pending.milestones[0].state = "PAID";
+  await commit(
+    6,
+    "20000000-0000-4000-8000-000000000011",
+    "5".repeat(64),
+    pending,
+    "confirm_payment",
+  );
+  await user(3);
+  expect((await db.query("select * from public.evidence")).rows).toHaveLength(
+    0,
+  );
+  expect((await db.query("select * from storage.objects")).rows).toHaveLength(
+    0,
+  );
 });

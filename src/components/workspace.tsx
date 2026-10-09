@@ -643,11 +643,18 @@ export function Workspace({
                   </>
                 ) : null}
                 {detail.agreement.terms.protocol ? (
-                  <PapPanel
-                    key={detail.project.id}
-                    detail={detail}
-                    wallet={session.user.wallet}
-                  />
+                  <>
+                    <PapPanel
+                      key={detail.project.id}
+                      detail={detail}
+                      wallet={session.user.wallet}
+                    />
+                    <OperationsDashboard
+                      key={`${detail.project.id}:payments`}
+                      wallet={session.user.wallet}
+                      projectId={detail.project.id}
+                    />
+                  </>
                 ) : (
                   <>
                     <EscrowPanel

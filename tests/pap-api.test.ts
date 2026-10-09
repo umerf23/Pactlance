@@ -1,4 +1,4 @@
-import { beforeEach, it, expect, vi } from "vitest";
+import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import { terms, project, wallets } from "./pap-fixture";
 import { agreementCommitment } from "../src/lib/agreements/crypto";
 const f = vi.hoisted(() => ({
@@ -9,9 +9,13 @@ const f = vi.hoisted(() => ({
   prior: null as unknown,
   rpc: vi.fn(),
   admin: vi.fn(),
+  reconcile: vi.fn(),
   queries: [] as { table: string; filters: Record<string, unknown> }[],
 }));
 vi.mock("server-only", () => ({}));
+vi.mock("../src/lib/escrow/server/reconcile", () => ({
+  reconcileProject: f.reconcile,
+}));
 vi.mock("../src/lib/rate-limit", () => ({
   consumeRateLimit: async () => true,
 }));
@@ -100,6 +104,7 @@ beforeEach(async () => {
     error: null,
   });
 });
+afterEach(() => vi.unstubAllEnvs());
 it("rejects unsigned and foreign-origin writes before privileged reads", async () => {
   f.user = null;
   expect((await POST(request())).status).toBe(401);
@@ -156,9 +161,22 @@ it("returns an identical retry without processing the transition again", async (
     new_state: { status: "ACTIVE" },
     execution_revision: 1,
   };
+  vi.stubEnv("PAP_PAYMENTS_ENABLED", "true");
+  f.runtime = { revision: 1, active_version: 1, state: { milestones: [] } };
   const r = await POST(request());
   expect(r.status).toBe(200);
   expect((await r.json()).duplicate).toBe(true);
+  expect(f.rpc).not.toHaveBeenCalled();
+  expect(f.reconcile).not.toHaveBeenCalled();
+});
+it("refuses amendment activation while a milestone is still funded on chain", async () => {
+  vi.stubEnv("PAP_PAYMENTS_ENABLED", "true");
+  f.runtime = { revision: 1, active_version: 1, state: { milestones: [] } };
+  f.reconcile.mockResolvedValue({ snapshot: { state: { active: true } } });
+  const r = await POST(request({ ...command, expectedRevision: 1 }));
+  expect(r.status).toBe(409);
+  expect((await r.json()).error).toContain("Settle the funded escrow");
+  expect(f.reconcile).toHaveBeenCalledWith(project);
   expect(f.rpc).not.toHaveBeenCalled();
 });
 it("binds evidence lookup to project, version, milestone, purpose and uploader", async () => {

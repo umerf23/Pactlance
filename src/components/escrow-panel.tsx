@@ -29,6 +29,8 @@ import { operationalAPI } from "./evidence-panel";
 import { formatTokenAmount } from "@/lib/domain";
 import { refundUnits } from "@/lib/escrow/refund-amount";
 import { readWalletBalances } from "@/lib/escrow/wallet-readiness";
+import type { MilestoneExecution } from "@/lib/pap/engine";
+import { papPaymentAllowed } from "@/lib/pap/payment-actions";
 interface Milestone {
   index: number;
   status: number;
@@ -43,9 +45,18 @@ interface Milestone {
   clientApproved: boolean;
   freelancerApproved: boolean;
   agreementVersion: number;
+  submissionCommitment: string;
 }
 interface Snapshot {
   configured: boolean;
+  reason?: string;
+  pap?: {
+    version: number;
+    status: string;
+    milestones: (MilestoneExecution | null)[];
+    deliveryCommitments: Record<number, string>;
+    disputeCommitments: Record<number, string>;
+  };
   agreement?: BoundAgreement;
   draft?: BoundAgreement | null;
   state: {
@@ -60,7 +71,13 @@ interface Snapshot {
   chainTime: number;
   wallet: string;
 }
-export function EscrowPanel({ projectId }: { projectId: string }) {
+export function EscrowPanel({
+  projectId,
+  onReconciled,
+}: {
+  projectId: string;
+  onReconciled?: () => Promise<void>;
+}) {
   const { connection } = useConnection(),
     { publicKey, signTransaction, wallet: connectedWallet } = useWallet(),
     wallet = publicKey?.toBase58();
@@ -119,6 +136,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
       `/api/escrow?project=${projectId}`,
     )) as Snapshot;
     setSnapshot(s);
+    if (s.pap) await onReconciled?.();
     return s;
   }
   async function refreshStatus() {
@@ -284,6 +302,24 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         d = client.addresses(a, index < a.terms.milestones.length ? index : 0);
       const account = await connection.getAccountInfo(d.project, "finalized"),
         ixs: TransactionInstruction[] = [];
+      if (
+        a.terms.protocol &&
+        !papPaymentAllowed(
+          action,
+          fresh.pap,
+          a,
+          index,
+          m,
+          who.toBase58(),
+          clientUnits,
+          ["accept_proposal", "execute"].includes(action)
+            ? !!m?.cancelRemaining
+            : cancelFuture,
+        )
+      )
+        throw new Error(
+          "This payment action is not permitted by the current PAP workflow. Refresh protocol and review the required approvals.",
+        );
       const mint = new PublicKey(a.terms.token.mint),
         crOwner = new PublicKey(a.terms.clientWallet),
         frOwner = new PublicKey(a.terms.freelancerWallet),
@@ -351,7 +387,9 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
             await client.submitInstruction(
               a,
               index,
-              await evidenceHash(a, index, "delivery"),
+              a.terms.protocol
+                ? fresh.pap!.deliveryCommitments[index]
+                : await evidenceHash(a, index, "delivery"),
             ),
           );
           break;
@@ -361,7 +399,9 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
               a,
               index,
               who,
-              await evidenceHash(a, index, "dispute"),
+              a.terms.protocol
+                ? fresh.pap!.disputeCommitments[index]
+                : await evidenceHash(a, index, "dispute"),
             ),
           );
           break;
@@ -369,7 +409,16 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
           if (who.toBase58() !== a.terms.clientWallet)
             throw new Error("Only the client approves delivery.");
           recipients();
-          ixs.push(await client.approveInstruction(a, index, fr));
+          ixs.push(
+            await client.approveInstruction(
+              a,
+              index,
+              fr,
+              a.terms.protocol
+                ? fresh.pap!.deliveryCommitments[index]
+                : undefined,
+            ),
+          );
           break;
         case "claim":
           recipients();
@@ -517,6 +566,14 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         "finalized",
       );
       if (!account) throw new Error("Create escrow first.");
+      if (
+        a.terms.protocol &&
+        action === "cancel" &&
+        fresh.pap?.status !== "CANCELLED"
+      )
+        throw new Error(
+          "Both parties must approve workflow cancellation before cancelling future escrow.",
+        );
       let tx: Transaction, height: number;
       if (incoming) {
         const envelope = JSON.parse(jointPackage) as JointEnvelope;
@@ -591,38 +648,59 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
     !!m &&
     /^(0|[1-9][0-9]{0,19})$/.test(clientUnits) &&
     BigInt(clientUnits) <= BigInt(m.amount);
+  const pap = !!a?.terms.protocol;
+  const papAllowed = (action: string) =>
+    !pap ||
+    (!!a &&
+      papPaymentAllowed(
+        action,
+        snapshot?.pap,
+        a,
+        s?.next ?? 0,
+        m,
+        wallet ?? "",
+        clientUnits,
+        ["accept_proposal", "execute"].includes(action)
+          ? !!m?.cancelRemaining
+          : cancelFuture,
+      ));
   const nextStep = pending
     ? "Recover the saved transaction before requesting another signature."
-    : !s
-      ? "Review these terms, then create the escrow with a participant wallet."
-      : s.cancelled
-        ? "Remaining work is cancelled. Review the transaction history."
-        : a && s.next >= a.terms.milestones.length
-          ? "All milestones are settled. Review the finalized transaction history and recipient balances."
-          : !s.clientAccepted || !s.freelancerAccepted
-            ? "Both participants must accept these deployed terms on chain before funding. Share the project link with the other participant."
-            : !s.active
-              ? isClient
-                ? "Fund the next milestone with the configured TEST token. Check your balances first."
-                : "Wait for the client to fund the next milestone. Verify funding here before starting work."
-              : m?.status === 1
-                ? isFreelancer
-                  ? "Save your delivery evidence, then load it here and submit its commitment before the delivery deadline."
-                  : "This milestone is funded. Wait for recorded delivery; review its evidence once submitted."
-                : m?.status === 2
-                  ? BigInt(snapshot?.chainTime ?? 0) >= BigInt(m.reviewDeadline)
-                    ? "The review window has expired. An eligible claim can settle to the fixed freelancer wallet."
-                    : isClient
-                      ? "Review the private delivery evidence. Approve payment or open an eligible dispute before review expiry."
-                      : "Delivery is recorded. Wait for client review; the eligible timeout claim becomes available after review expiry."
-                  : m?.status === 4
-                    ? reviewer
-                      ? "You are the currently eligible reviewer. Inspect both parties’ evidence before allocating the funded amount."
-                      : "Ordinary payout is paused. The eligible reviewer can resolve this dispute, or both parties can agree on a mutual allocation."
-                    : "Refresh finalized status and review the available actions.";
+    : pap && a && snapshot?.pap?.version !== a.terms.version
+      ? "Synchronize the jointly approved amendment using the two-signature revision below before new funding."
+      : pap && s?.active
+        ? "Publish the validated PAP delivery, then the client explicitly authorizes payment. Disputes require an authorized allocation; timers never transfer PAP funds."
+        : !s
+          ? "Review these terms, then create the escrow with a participant wallet."
+          : s.cancelled
+            ? "Remaining work is cancelled. Review the transaction history."
+            : a && s.next >= a.terms.milestones.length
+              ? "All milestones are settled. Review the finalized transaction history and recipient balances."
+              : !s.clientAccepted || !s.freelancerAccepted
+                ? "Both participants must accept these deployed terms on chain before funding. Share the project link with the other participant."
+                : !s.active
+                  ? isClient
+                    ? "Fund the next milestone with the configured TEST token. Check your balances first."
+                    : "Wait for the client to fund the next milestone. Verify funding here before starting work."
+                  : m?.status === 1
+                    ? isFreelancer
+                      ? "Save your delivery evidence, then load it here and submit its commitment before the delivery deadline."
+                      : "This milestone is funded. Wait for recorded delivery; review its evidence once submitted."
+                    : m?.status === 2
+                      ? BigInt(snapshot?.chainTime ?? 0) >=
+                        BigInt(m.reviewDeadline)
+                        ? "The review window has expired. An eligible claim can settle to the fixed freelancer wallet."
+                        : isClient
+                          ? "Review the private delivery evidence. Approve payment or open an eligible dispute before review expiry."
+                          : "Delivery is recorded. Wait for client review; the eligible timeout claim becomes available after review expiry."
+                      : m?.status === 4
+                        ? reviewer
+                          ? "You are the currently eligible reviewer. Inspect both parties’ evidence before allocating the funded amount."
+                          : "Ordinary payout is paused. The eligible reviewer can resolve this dispute, or both parties can agree on a mutual allocation."
+                        : "Refresh finalized status and review the available actions.";
   return (
     <section
-      id="project-escrow"
+      id={pap ? "project-payments" : "project-escrow"}
       className="workspace-card escrow-panel"
       aria-busy={busy}
     >
@@ -650,7 +728,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         </p>
       )}
       {snapshot && !snapshot.configured && (
-        <p>Escrow deployment settings are pending.</p>
+        <p>{snapshot.reason ?? "Escrow deployment settings are pending."}</p>
       )}
       {a && (
         <>
@@ -659,6 +737,15 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
             signatures authorize on-chain actions. The program is upgradeable;
             its upgrade authority can change the code.
           </p>
+          {pap && (
+            <p className="notice">
+              PAP rules and evidence are evaluated by the trusted application.
+              This escrow enforces wallet authorization, fixed recipients and
+              exact allocations. Explicit client approval, both-party
+              settlement, or an authorized reviewer is required; automatic timer
+              payouts are disabled.
+            </p>
+          )}
           <p className="escrow-next-step">
             <strong>Next step: </strong>
             {nextStep}
@@ -694,7 +781,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
               </small>
             </div>
           </div>
-          {participant && !s && (
+          {participant && !s && papAllowed("create") && (
             <button disabled={disabled} onClick={() => act("create")}>
               Create escrow with these terms
             </button>
@@ -740,7 +827,10 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
               {!s.active && s.next < a.terms.milestones.length && isClient && (
                 <button
                   disabled={
-                    disabled || !s.clientAccepted || !s.freelancerAccepted
+                    disabled ||
+                    !s.clientAccepted ||
+                    !s.freelancerAccepted ||
+                    !papAllowed("fund")
                   }
                   onClick={() => act("fund")}
                 >
@@ -792,7 +882,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                 Delivery deadline:{" "}
                 {new Date(Number(m.deliveryDeadline) * 1000).toLocaleString()}.
               </p>
-              {participant && (
+              {participant && !pap && (
                 <>
                   <button className="secondary" onClick={loadEvidence}>
                     Load completed evidence
@@ -819,15 +909,20 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                   </label>
                 </>
               )}
-              {m.status === 1 && isFreelancer && (
-                <button
-                  disabled={disabled || !evidenceId}
-                  onClick={() => act("submit")}
-                >
-                  Submit delivery commitment
-                </button>
-              )}
+              {(m.status === 1 || (pap && m.status === 2)) &&
+                isFreelancer &&
+                papAllowed("submit") && (
+                  <button
+                    disabled={disabled || (!pap && !evidenceId)}
+                    onClick={() => act("submit")}
+                  >
+                    {pap
+                      ? "Publish validated PAP delivery"
+                      : "Submit delivery commitment"}
+                  </button>
+                )}
               {m.status === 1 &&
+                !pap &&
                 isClient &&
                 BigInt(snapshot?.chainTime ?? 0) >=
                   BigInt(m.deliveryDeadline) && (
@@ -837,17 +932,22 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                 )}
               {m.status === 2 && (
                 <>
-                  <p>
-                    Review expires:{" "}
-                    {new Date(Number(m.reviewDeadline) * 1000).toLocaleString()}
-                    .
-                  </p>
-                  {isClient && (
+                  {!pap && (
+                    <p>
+                      Review expires:{" "}
+                      {new Date(
+                        Number(m.reviewDeadline) * 1000,
+                      ).toLocaleString()}
+                      .
+                    </p>
+                  )}
+                  {isClient && papAllowed("approve") && (
                     <button disabled={disabled} onClick={() => act("approve")}>
                       Approve and pay freelancer
                     </button>
                   )}
                   {participant &&
+                    !pap &&
                     (BigInt(snapshot?.chainTime ?? 0) <
                     BigInt(m.reviewDeadline) ? (
                       <button
@@ -862,6 +962,11 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                       </button>
                     ))}
                 </>
+              )}
+              {participant && pap && papAllowed("dispute") && (
+                <button disabled={disabled} onClick={() => act("dispute")}>
+                  Lock the PAP dispute on chain
+                </button>
               )}
               {(participant || reviewer) && (
                 <section>
@@ -890,7 +995,9 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                         Cancel future work with this mutual settlement
                       </label>
                       <button
-                        disabled={disabled || !allocationValid}
+                        disabled={
+                          disabled || !allocationValid || !papAllowed("propose")
+                        }
                         onClick={() => act("propose")}
                       >
                         Propose exact allocation
@@ -908,7 +1015,9 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                             freelancer approval: {String(m.freelancerApproved)}.
                           </p>
                           <button
-                            disabled={disabled}
+                            disabled={
+                              disabled || !papAllowed("accept_proposal")
+                            }
                             onClick={() => act("accept_proposal")}
                           >
                             Accept this exact proposal
@@ -917,7 +1026,8 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                             disabled={
                               disabled ||
                               !m.clientApproved ||
-                              !m.freelancerApproved
+                              !m.freelancerApproved ||
+                              !papAllowed("execute")
                             }
                             onClick={() => act("execute")}
                           >
@@ -927,7 +1037,7 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
                       )}
                     </>
                   )}
-                  {reviewer && (
+                  {reviewer && papAllowed("resolve") && (
                     <button
                       disabled={disabled || !allocationValid}
                       onClick={() => act("resolve")}

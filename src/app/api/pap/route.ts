@@ -18,6 +18,7 @@ import {
   evidenceManifest,
   type EvidenceRecord,
 } from "@/lib/evidence/schema";
+import { reconcileProject } from "@/lib/escrow/server/reconcile";
 async function context(id: string, wallet: string, version?: number) {
   const db = adminSupabase(),
     runtime = await db
@@ -56,7 +57,8 @@ async function context(id: string, wallet: string, version?: number) {
   const reviewerIndices =
     state && state.version === v
       ? state.milestones.flatMap((m, i) =>
-          m.state === "DISPUTED" &&
+          (m.state === "DISPUTED" ||
+            (m.state === "PAYMENT_PENDING" && !!m.allocation)) &&
           m.disputedAt &&
           wallet ===
             (Date.now() >=
@@ -112,6 +114,9 @@ export async function GET(request: Request) {
             terms: a.terms,
             revision: c.runtime?.revision,
             indices: c.reviewerIndices,
+            allocationPendingIndices: c.reviewerIndices.filter(
+              (i) => c.runtime?.state.milestones[i].state === "PAYMENT_PENDING",
+            ),
           });
         } catch (e) {
           if (!(e instanceof ApiError && e.status === 404)) throw e;
@@ -197,6 +202,18 @@ export async function POST(request: Request) {
     };
     const prior = await duplicate();
     if (prior) return json(prior);
+    if (
+      cmd.action === "activate" &&
+      c.runtime &&
+      process.env.PAP_PAYMENTS_ENABLED === "true"
+    ) {
+      const { snapshot } = await reconcileProject(cmd.projectId);
+      if (snapshot.state?.active)
+        throw new ApiError(
+          409,
+          "Settle the funded escrow before activating an amendment.",
+        );
+    }
     if ((c.runtime?.revision ?? 0) !== cmd.expectedRevision)
       throw new ApiError(
         409,
