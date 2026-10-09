@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { EscrowPanel } from "./escrow-panel";
+import { PapReviewer } from "./pap-reviewer";
 import { operationalAPI, EvidencePanel } from "./evidence-panel";
 import {
   explorerURL,
@@ -118,6 +119,7 @@ export function OperationsDashboard({
     );
   return (
     <section className="workspace-card">
+      {!projectId ? <PapReviewer wallet={wallet} /> : null}
       <div className="workspace-heading">
         <h2>Activity and reminders</h2>
         <button className="secondary" onClick={refresh}>

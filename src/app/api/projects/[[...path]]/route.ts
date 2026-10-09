@@ -179,7 +179,58 @@ async function mutate(request: Request, context: Context, revision: boolean) {
     if (revision) {
       const existing = await projectForUser(path[0], auth);
       id = existing.id;
+      const previous = await auth.db
+        .from("agreements")
+        .select("terms")
+        .eq("project_id", id)
+        .eq("version", existing.current_version)
+        .single();
+      if (previous.error)
+        throw new ApiError(503, "Agreement history unavailable.");
+      if (!!previous.data.terms.protocol !== !!input.protocol)
+        throw new ApiError(
+          409,
+          "Create a separate project when switching between PAP workflow and legacy escrow.",
+        );
+      if (input.protocol) {
+        const runtime = await admin
+          .from("agreement_execution")
+          .select("state,active_version")
+          .eq("project_id", id)
+          .maybeSingle();
+        if (runtime.error)
+          throw new ApiError(
+            503,
+            "PAP execution unavailable; install the migration before proposing amendments.",
+          );
+        if (runtime.data) {
+          const active = await auth.db
+            .from("agreements")
+            .select("terms")
+            .eq("project_id", id)
+            .eq("version", runtime.data.active_version)
+            .single();
+          if (active.error)
+            throw new ApiError(503, "Active terms unavailable.");
+          const revised = makeTerms(input, id, existing.current_version + 1);
+          for (const [i, m] of runtime.data.state.milestones.entries())
+            if (m.acceptedAt) {
+              settledPrefix = i + 1;
+              if (
+                canonicalJSON(revised.milestones[i] ?? null) !==
+                  canonicalJSON(active.data.terms.milestones[i]) ||
+                canonicalJSON(revised.protocol!.milestones[i] ?? null) !==
+                  canonicalJSON(active.data.terms.protocol.milestones[i])
+              )
+                throw new ApiError(
+                  400,
+                  "Completed milestone terms and payment allocations cannot change.",
+                );
+            }
+        }
+      }
       if (
+        !input.protocol &&
         process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID &&
         process.env.NEXT_PUBLIC_TEST_TOKEN_MINT
       ) {
@@ -228,7 +279,7 @@ async function mutate(request: Request, context: Context, revision: boolean) {
     } catch (e) {
       throw new ApiError(400, (e as Error).message);
     }
-    const terms = makeTerms(input, id, version);
+    const terms = makeTerms(input, id, version, auth.wallet);
     const salt = randomBytes(32).toString("hex");
     const commitment = await agreementCommitment(terms, salt);
     const result = await admin.rpc("save_agreement_version", {

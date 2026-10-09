@@ -176,7 +176,7 @@ export async function runWorker() {
   for (let page = 0; ; page++) {
     const { data: projects, error } = await admin
       .from("projects")
-      .select("id")
+      .select("id,current_version")
       .order("id", { ascending: true })
       .range(page * 100, page * 100 + 99);
     if (error) throw new Error("Projects unavailable.");
@@ -185,6 +185,20 @@ export async function runWorker() {
         ...(await Promise.all(
           (projects ?? []).slice(offset, offset + 4).map(async (p) => {
             try {
+              const terms = await admin
+                .from("agreements")
+                .select("terms")
+                .eq("project_id", p.id)
+                .eq("version", p.current_version)
+                .maybeSingle();
+              if (terms.error || !terms.data)
+                throw new Error("Current agreement unavailable.");
+              if (terms.data.terms.protocol)
+                return {
+                  projectId: p.id,
+                  reconciled: false,
+                  claims: "pap_offchain_workflow",
+                };
               return { projectId: p.id, ...(await runProjectWorker(p.id)) };
             } catch {
               return {

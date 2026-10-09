@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { PublicKey } from "@solana/web3.js";
 import { parseTokenAmount } from "../domain";
+import { papProtocol, normalizePapTerms } from "../pap/schema";
 export const walletAddress = z.string().refine((value) => {
   try {
     const key = new PublicKey(value);
@@ -47,9 +48,16 @@ export const agreementInput = z
     reviewHours: z.number().int().min(1).max(720),
     backupDelayHours: z.number().int().min(1).max(2160),
     milestones: z.array(milestone).min(1).max(20),
+    protocol: papProtocol.optional(),
   })
   .strict()
   .superRefine((a, ctx) => {
+    if (a.protocol && a.protocol.milestones.length !== a.milestones.length)
+      ctx.addIssue({
+        code: "custom",
+        message: "Configure every milestone in the protocol",
+        path: ["protocol", "milestones"],
+      });
     const keys = [
       a.clientWallet,
       a.freelancerWallet,
@@ -72,10 +80,12 @@ export const agreementInput = z
           message: "Delivery dates must follow milestone order",
           path: ["milestones", i, "deliveryDeadline"],
         });
-  });
+  })
+  .transform((a) => (a.protocol ? normalizePapTerms(a) : a));
 export type AgreementInput = z.infer<typeof agreementInput>;
 export type AgreementTerms = Omit<AgreementInput, "milestones"> & {
   schemaVersion: 1;
+  creatorWallet?: string;
   projectId: string;
   version: number;
   network: "devnet";
@@ -83,7 +93,7 @@ export type AgreementTerms = Omit<AgreementInput, "milestones"> & {
   escrowProgram: null;
   platformFeeUnits: "0";
   networkFeePayer: "transaction_submitter";
-  revisionPolicy: "single_submission_no_clock_reset";
+  revisionPolicy: "single_submission_no_clock_reset" | "pap_bounded_revisions";
   backupPolicy: "exclusive_after_deadline";
   milestones: (Omit<AgreementInput["milestones"][number], "amount"> & {
     id: string;
@@ -95,9 +105,11 @@ export function makeTerms(
   input: AgreementInput,
   projectId: string,
   version: number,
+  creatorWallet?: string,
 ): AgreementTerms {
   return {
     ...input,
+    ...(input.protocol && creatorWallet ? { creatorWallet } : {}),
     schemaVersion: 1,
     projectId,
     version,
@@ -106,7 +118,9 @@ export function makeTerms(
     escrowProgram: null,
     platformFeeUnits: "0",
     networkFeePayer: "transaction_submitter",
-    revisionPolicy: "single_submission_no_clock_reset",
+    revisionPolicy: input.protocol
+      ? "pap_bounded_revisions"
+      : "single_submission_no_clock_reset",
     backupPolicy: "exclusive_after_deadline",
     milestones: input.milestones.map((m, i) => {
       const { amount, ...rest } = m;

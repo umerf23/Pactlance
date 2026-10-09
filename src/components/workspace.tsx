@@ -8,6 +8,7 @@ import { browserSupabase } from "@/lib/supabase/client";
 import { ProjectEditor } from "./project-editor";
 import { AgreementView } from "./agreement-view";
 import { EscrowPanel } from "./escrow-panel";
+import { PapPanel } from "./pap-panel";
 import { EvidencePanel } from "./evidence-panel";
 import { OperationsDashboard } from "./operations-dashboard";
 import { agreementCommitment } from "@/lib/agreements/crypto";
@@ -47,6 +48,7 @@ async function api(path: string, body?: unknown, method = "POST") {
 function inputFromDetail(detail: ProjectDetail): AgreementInput {
   const t = detail.agreement.terms;
   return {
+    ...(t.protocol ? { protocol: t.protocol } : {}),
     title: t.title,
     scope: t.scope,
     clientWallet: t.clientWallet,
@@ -583,7 +585,9 @@ export function Workspace({
                   <p role="status">{shareNotice}</p>
                   <div className="operational-actions">
                     <a className="secondary" href="#project-escrow">
-                      Payment actions
+                      {detail.agreement.terms.protocol
+                        ? "Agreement execution"
+                        : "Payment actions"}
                     </a>
                     <a className="secondary" href="#project-evidence">
                       Delivery evidence
@@ -601,46 +605,62 @@ export function Workspace({
                   onEdit={() => setEditing(true)}
                   onBack={closeProject}
                 />
-                <section id="project-evidence" className="workspace-card">
-                  <label>
-                    Milestone evidence
-                    <select
-                      value={Math.min(
+                {!detail.agreement.terms.protocol ? (
+                  <>
+                    <section id="project-evidence" className="workspace-card">
+                      <label>
+                        Milestone evidence
+                        <select
+                          value={Math.min(
+                            evidenceIndex,
+                            detail.agreement.terms.milestones.length - 1,
+                          )}
+                          onChange={(e) =>
+                            setEvidenceIndex(Number(e.target.value))
+                          }
+                        >
+                          {detail.agreement.terms.milestones.map((m, i) => (
+                            <option key={m.id} value={i}>
+                              {i + 1}. {m.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </section>
+                    <EvidencePanel
+                      key={`${detail.project.id}:${detail.agreement.version}:${evidenceIndex}`}
+                      projectId={detail.project.id}
+                      version={detail.agreement.version}
+                      index={Math.min(
                         evidenceIndex,
                         detail.agreement.terms.milestones.length - 1,
                       )}
-                      onChange={(e) => setEvidenceIndex(Number(e.target.value))}
-                    >
-                      {detail.agreement.terms.milestones.map((m, i) => (
-                        <option key={m.id} value={i}>
-                          {i + 1}. {m.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </section>
-                <EvidencePanel
-                  key={`${detail.project.id}:${detail.agreement.version}:${evidenceIndex}`}
-                  projectId={detail.project.id}
-                  version={detail.agreement.version}
-                  index={Math.min(
-                    evidenceIndex,
-                    detail.agreement.terms.milestones.length - 1,
-                  )}
-                  canUpload={true}
-                  freelancer={
-                    session.user.wallet === detail.project.freelancer_wallet
-                  }
-                />
-                <EscrowPanel
-                  key={`${detail.project.id}:${session.user.wallet}`}
-                  projectId={detail.project.id}
-                />
-                <OperationsDashboard
-                  key={detail.project.id}
-                  wallet={session.user.wallet}
-                  projectId={detail.project.id}
-                />
+                      canUpload={true}
+                      freelancer={
+                        session.user.wallet === detail.project.freelancer_wallet
+                      }
+                    />
+                  </>
+                ) : null}
+                {detail.agreement.terms.protocol ? (
+                  <PapPanel
+                    key={detail.project.id}
+                    detail={detail}
+                    wallet={session.user.wallet}
+                  />
+                ) : (
+                  <>
+                    <EscrowPanel
+                      key={`${detail.project.id}:${session.user.wallet}`}
+                      projectId={detail.project.id}
+                    />
+                    <OperationsDashboard
+                      key={detail.project.id}
+                      wallet={session.user.wallet}
+                      projectId={detail.project.id}
+                    />
+                  </>
+                )}
               </>
             ) : (
               <>

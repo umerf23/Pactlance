@@ -29,6 +29,10 @@ export async function bindAgreement(
   program: string,
   mint: string,
 ): Promise<BoundAgreement> {
+  if (record.terms.protocol)
+    throw new Error(
+      "PAP workflow policies require a compatible escrow adapter; this contract cannot execute them.",
+    );
   deploymentKey(program);
   deploymentKey(mint);
   if (
