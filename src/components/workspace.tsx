@@ -282,6 +282,9 @@ export function Workspace() {
     <div className="live-workspace">
       <header>
         <Link className="brand" href="/">
+          <span className="workspace-brand-icon" aria-hidden="true">
+            p
+          </span>
           pactlance<span className="brand-dot">.</span>
         </Link>
         <div className="wallet-actions">
@@ -290,16 +293,28 @@ export function Workspace() {
         </div>
       </header>
       <main className="workspace-content">
-        <div className="workspace-heading">
+        <div className="workspace-heading workspace-hero">
           <div>
-            <p className="eyebrow">PRIVATE PROJECTS · SOLANA DEVNET</p>
-            <h1>Agree before you begin.</h1>
+            <p className="eyebrow">YOUR WORK, WITH CLEARER TERMS</p>
+            <h1>
+              {detail
+                ? "Every milestone matters."
+                : authenticated
+                  ? "Your next chapter of work."
+                  : "Good work starts with trust."}
+            </h1>
             <p className="subtitle">
               Private projects. Clear milestones. Two signatures on the same
               terms.
             </p>
           </div>
-          <span className="network">Solana devnet</span>
+          <div className="workspace-hero-note">
+            <span className="network">
+              <i aria-hidden="true" />
+              Solana devnet
+            </span>
+            <span>TEST tokens · no monetary value</span>
+          </div>
         </div>
         {error ? (
           <p className="error-message" role="alert">
@@ -333,7 +348,8 @@ export function Workspace() {
                 </li>
                 <li>
                   Set the Supabase URL, publishable key and server-only
-                  service-role key in the app environment, then restart or redeploy.
+                  service-role key in the app environment, then restart or
+                  redeploy.
                 </li>
               </ol>
               <p>Never paste secret keys or wallet seed phrases into chat.</p>
@@ -342,7 +358,11 @@ export function Workspace() {
         ) : null}
         {session?.configured && !authenticated ? (
           <section className="workspace-card sign-in-panel">
-            <h2>Sign in with your wallet</h2>
+            <span className="signin-emblem" aria-hidden="true">
+              ↗
+            </span>
+            <p className="eyebrow">YOUR PRIVATE WORKSPACE</p>
+            <h2>Welcome to Pactlance.</h2>
             <p>
               First connect a Solana wallet, then sign a message to verify
               ownership. Connecting alone does not sign you in.
@@ -369,8 +389,17 @@ export function Workspace() {
         {authenticated && session?.user ? (
           <>
             <div className="session-strip">
-              <span>
-                Signed in: <code>{session.user.wallet}</code>
+              <span className="session-identity">
+                <span className="session-avatar" aria-hidden="true">
+                  {(name.trim() || "W").slice(0, 1).toUpperCase()}
+                </span>
+                <span>
+                  <strong>{name.trim() || "Wallet workspace"}</strong>
+                  <code title={session.user.wallet}>
+                    {session.user.wallet.slice(0, 6)}…
+                    {session.user.wallet.slice(-6)}
+                  </code>
+                </span>
               </span>
               <button className="text-button" onClick={signOut}>
                 Sign out
@@ -446,9 +475,44 @@ export function Workspace() {
               </>
             ) : (
               <>
-                <section className="workspace-card">
+                <div
+                  className="workspace-metrics"
+                  aria-label="Project overview"
+                >
+                  <div>
+                    <span>YOUR PROJECTS</span>
+                    <strong>
+                      {projects.length.toString().padStart(2, "0")}
+                    </strong>
+                    <small>Private agreements in your workspace</small>
+                  </div>
+                  <div>
+                    <span>AS FREELANCER</span>
+                    <strong>
+                      {projects
+                        .filter((p) => p.freelancer_wallet === address)
+                        .length.toString()
+                        .padStart(2, "0")}
+                    </strong>
+                    <small>Work you deliver</small>
+                  </div>
+                  <div>
+                    <span>AS CLIENT</span>
+                    <strong>
+                      {projects
+                        .filter((p) => p.client_wallet === address)
+                        .length.toString()
+                        .padStart(2, "0")}
+                    </strong>
+                    <small>Work you commission</small>
+                  </div>
+                </div>
+                <section className="workspace-card project-list-card">
                   <div className="workspace-heading">
-                    <h2>Your projects</h2>
+                    <div>
+                      <p className="eyebrow">WORKSPACE OVERVIEW</p>
+                      <h2>Your projects</h2>
+                    </div>
                     <button
                       className="primary compact"
                       onClick={() => setCreating(true)}
@@ -475,14 +539,19 @@ export function Workspace() {
                         key={project.id}
                         onClick={() => openProject(project.id)}
                       >
-                        <span>
-                          <strong>{project.title}</strong>
-                          <small>
-                            {project.freelancer_wallet === address
-                              ? "Freelancer"
-                              : "Client"}{" "}
-                            · version {project.current_version}
-                          </small>
+                        <span className="project-row-main">
+                          <span className="project-row-icon" aria-hidden="true">
+                            {project.title.slice(0, 1).toUpperCase()}
+                          </span>
+                          <span>
+                            <strong>{project.title}</strong>
+                            <small>
+                              {project.freelancer_wallet === address
+                                ? "Freelancer"
+                                : "Client"}{" "}
+                              · version {project.current_version}
+                            </small>
+                          </span>
                         </span>
                         <span>Review agreement ↗</span>
                       </button>

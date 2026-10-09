@@ -568,7 +568,10 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
   return (
     <section className="workspace-card escrow-panel" aria-busy={busy}>
       <div className="workspace-heading">
-        <h2>Devnet escrow</h2>
+        <div>
+          <p className="eyebrow">PAYMENT WORKSPACE</p>
+          <h2>Milestone escrow</h2>
+        </div>
         <button className="secondary" disabled={busy} onClick={refreshStatus}>
           Refresh chain status
         </button>
@@ -618,14 +621,31 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
               transaction buttons.
             </p>
           )}
-          <p>
-            Version {a.terms.version} · commitment <code>{a.commitment}</code>
-          </p>
-          <p className="escrow-identities">
-            Client: {a.terms.clientWallet}
-            <br />
-            Freelancer: {a.terms.freelancerWallet}
-          </p>
+          <div className="escrow-agreement-meta">
+            <span className="outline-pill">Agreement v{a.terms.version}</span>
+            <details>
+              <summary>View agreement commitment</summary>
+              <code className="wrap-code">{a.commitment}</code>
+            </details>
+          </div>
+          <div className="form-grid escrow-identities">
+            <div className="identity-card">
+              <strong>CLIENT</strong>
+              <code>{a.terms.clientWallet}</code>
+              <small>
+                {s?.clientAccepted ? "Accepted on chain" : "Acceptance pending"}
+              </small>
+            </div>
+            <div className="identity-card">
+              <strong>FREELANCER</strong>
+              <code>{a.terms.freelancerWallet}</code>
+              <small>
+                {s?.freelancerAccepted
+                  ? "Accepted on chain"
+                  : "Acceptance pending"}
+              </small>
+            </div>
+          </div>
           {participant && !s && (
             <button disabled={disabled} onClick={() => act("create")}>
               Create escrow with these terms
@@ -633,11 +653,29 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
           )}
           {participant && s && !s.cancelled && (
             <>
-              <p>
-                Client acceptance: {s.clientAccepted ? "accepted" : "pending"};
-                freelancer acceptance:{" "}
-                {s.freelancerAccepted ? "accepted" : "pending"}.
-              </p>
+              <div
+                className="escrow-acceptance-status"
+                aria-label="On-chain acceptance"
+              >
+                <span
+                  className={
+                    s.clientAccepted
+                      ? "acceptance-badge accepted"
+                      : "acceptance-badge"
+                  }
+                >
+                  Client · {s.clientAccepted ? "accepted" : "pending"}
+                </span>
+                <span
+                  className={
+                    s.freelancerAccepted
+                      ? "acceptance-badge accepted"
+                      : "acceptance-badge"
+                  }
+                >
+                  Freelancer · {s.freelancerAccepted ? "accepted" : "pending"}
+                </span>
+              </div>
               {((isClient && !s.clientAccepted) ||
                 (isFreelancer && !s.freelancerAccepted)) && (
                 <button disabled={disabled} onClick={() => act("accept")}>
