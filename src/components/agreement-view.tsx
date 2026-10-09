@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { PapPreview } from "./pap-preview";
 import type { AgreementRecord, ProjectDetail } from "@/lib/agreements/schema";
 import { formatTokenAmount } from "@/lib/domain";
 export function AgreementView({
@@ -65,7 +66,7 @@ export function AgreementView({
               Version {a.version}
               {a.version === detail.project.current_version
                 ? " (current)"
-                : " (superseded)"}
+                : " (earlier version)"}
             </option>
           ))}
         </select>
@@ -124,50 +125,59 @@ export function AgreementView({
           </dl>
         </article>
       ))}
-      <h2>Payment and review rules</h2>
-      <ul className="rules-list">
-        <li>
-          Solana devnet. TEST tokens have no monetary value. Token precision: 6
-          decimals.
-        </li>
-        <li>
-          Each milestone has its own vault; only one funded milestone may be
-          active at a time.
-        </li>
-        <li>
-          Submit once before delivery expiry. The client has {terms.reviewHours}{" "}
-          hours from recorded submission to review.
-        </li>
-        <li>
-          Client approval releases payment. Without a dispute, anyone may
-          execute a claim at review expiry to the fixed freelancer wallet.
-        </li>
-        <li>
-          No delivery: the client may claim a refund at delivery expiry if no
-          dispute exists.
-        </li>
-        <li>
-          Either party may dispute strictly before the applicable
-          delivery/review deadline; ordinary payment and refund stop.
-        </li>
-        <li>
-          Primary reviewer decides before escalation; backup takes over{" "}
-          {terms.backupDelayHours} hours after the dispute opens. Allocations
-          can only go to the original participants.
-        </li>
-        <li>
-          Both parties may agree a settlement or cancellation. Disputed funds
-          can remain locked if nobody authorized acts.
-        </li>
-        <li>
-          One submission; no silent deadline resets. Additional work needs newly
-          accepted terms.
-        </li>
-        <li>
-          No platform fee. The transaction submitter pays network fees. Future
-          milestones are not guaranteed funding.
-        </li>
-      </ul>
+      {terms.protocol ? (
+        <PapPreview
+          record={record}
+          previous={detail.history.find((a) => a.version === version - 1)}
+        />
+      ) : (
+        <>
+          <h2>Payment and review rules</h2>
+          <ul className="rules-list">
+            <li>
+              Solana devnet. TEST tokens have no monetary value. Token
+              precision: 6 decimals.
+            </li>
+            <li>
+              Each milestone has its own vault; only one funded milestone may be
+              active at a time.
+            </li>
+            <li>
+              Submit once before delivery expiry. The client has{" "}
+              {terms.reviewHours} hours from recorded submission to review.
+            </li>
+            <li>
+              Client approval releases payment. Without a dispute, anyone may
+              execute a claim at review expiry to the fixed freelancer wallet.
+            </li>
+            <li>
+              No delivery: the client may claim a refund at delivery expiry if
+              no dispute exists.
+            </li>
+            <li>
+              Either party may dispute strictly before the applicable
+              delivery/review deadline; ordinary payment and refund stop.
+            </li>
+            <li>
+              Primary reviewer decides before escalation; backup takes over{" "}
+              {terms.backupDelayHours} hours after the dispute opens.
+              Allocations can only go to the original participants.
+            </li>
+            <li>
+              Both parties may agree a settlement or cancellation. Disputed
+              funds can remain locked if nobody authorized acts.
+            </li>
+            <li>
+              One submission; no silent deadline resets. Additional work needs
+              newly accepted terms.
+            </li>
+            <li>
+              No platform fee. The transaction submitter pays network fees.
+              Future milestones are not guaranteed funding.
+            </li>
+          </ul>
+        </>
+      )}
       <div className="commitment">
         <strong>Agreement fingerprint · SHA-256</strong>
         <code>{record.commitment}</code>
@@ -177,9 +187,15 @@ export function AgreementView({
         </small>
       </div>
       <p className="notice">
-        This document signature records off-chain acceptance and makes no
-        deposit. In Payment actions, both participants must also accept the
-        terms bound to the deployed program and TEST mint before funding.
+        {terms.protocol ? (
+          "Both wallet signatures record consent to this version. Activation is separate; off-chain rule execution does not authorize token transfers."
+        ) : (
+          <>
+            This document signature records off-chain acceptance and makes no
+            deposit. In Payment actions, both participants must also accept the
+            terms bound to the deployed program and TEST mint before funding.
+          </>
+        )}
       </p>
       {current && !mine && !detail.project.locked ? (
         <>
@@ -201,7 +217,7 @@ export function AgreementView({
       ) : (
         <p role="status">
           {!current
-            ? "This version has been superseded. Select the current version to accept."
+            ? "Select the latest proposal to sign. Earlier PAP terms remain active until a jointly signed amendment is activated."
             : mine
               ? "Your signed acceptance is recorded for this version."
               : "This project is locked against changes."}

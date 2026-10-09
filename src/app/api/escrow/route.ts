@@ -14,11 +14,19 @@ export async function GET(request: Request) {
     // RLS authorizes participants or a freshly assigned reviewer before any privileged history read.
     const { data, error } = await auth.db
       .from("agreements")
-      .select("project_id")
+      .select("project_id,terms")
       .eq("project_id", id!)
+      .order("version", { ascending: false })
       .limit(1);
     if (error) throw new ApiError(503, "Agreement access unavailable.");
     if (!data?.length) throw new ApiError(404, "Project not found.");
+    if (data[0].terms.protocol)
+      return json({
+        configured: false,
+        wallet: auth.wallet,
+        reason:
+          "PAP workflow is off-chain; configurable policies require a compatible escrow adapter.",
+      });
     if (
       !process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID ||
       !process.env.NEXT_PUBLIC_TEST_TOKEN_MINT

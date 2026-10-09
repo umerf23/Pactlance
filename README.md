@@ -11,6 +11,7 @@ CI verifies the contract in native tests and LiteSVM. Private evidence uploads/l
 
 CI baseline: [`44e487d`](https://github.com/umerf23/Pactlance/actions/runs/37909740880) passed all three jobs, including 18 SBF/LiteSVM cases. See [audit remediation and verification matrix](docs/audit-remediation.md) for the current patch, evidence and limits. This is not an independent security audit or a claim of production readiness.
 
+- [Programmable Agreement Protocol: implementation, trust boundaries and rollout](docs/programmable-agreements.md)
 - [Phase 3 setup and verification](docs/phase-3.md)
 - [Phase 4 escrow verification](docs/phase-4.md)
 - [Phase 5 settlement rules and verification](docs/phase-5.md)
@@ -85,3 +86,7 @@ The committed program ID and public manifest record the user's devnet deployment
 A project has multiple sequential milestones, one active funded milestone at a time, and a distinct vault per milestone. The remaining Phase 7 gate is complete end-to-end devnet and recovery verification. Phase 8 covers usability, recorded user trials and submission assets; unfinished tests remain on the final checklist.
 
 Prototype tokens are labelled TEST tokens. Real funds, PKR cash-out and card funding are later work. Database caches and frontend eligibility helpers cannot authorize token movements. The Solana program enforces payment rules; claims need an actual transaction submitted by a user or worker.
+
+### Structured programmable agreements
+
+Optional PAP v1 adds reusable work templates, structured deliverables/evidence, bounded revisions, explicit timeout policies, immutable amendments and consent, authenticated workflow transitions and an append-only timeline. Configurable PAP rules execute off-chain and expose payment eligibility only; the existing fixed-policy escrow cannot execute them, so PAP token transfers are blocked pending a compatible adapter. See the [implementation and rollout guide](docs/programmable-agreements.md).

@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { PapBuilder } from "./pap-builder";
+import { templateProtocol } from "@/lib/pap/templates";
 import { agreementInput, type AgreementInput } from "@/lib/agreements/schema";
 type Props = {
   wallet: string;
@@ -67,6 +69,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
   function useEditingTemplate() {
     setForm((old) => ({
       ...old,
+      protocol: undefined,
       title: "Video editing agreement",
       scope:
         "Edit a batch of client-supplied videos using the agreed brand assets and reference style. Review and customize these terms together before accepting.",
@@ -86,7 +89,22 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
     key: K,
     value: AgreementInput[K],
   ) {
-    setForm((old) => ({ ...old, [key]: value }));
+    setForm((old) => {
+      const next = { ...old, [key]: value };
+      if (key === "milestones" && old.protocol) {
+        const milestones = value as AgreementInput["milestones"];
+        next.protocol = {
+          ...old.protocol,
+          milestones: milestones.map((m) => {
+            const index = old.milestones.indexOf(m);
+            return index >= 0
+              ? old.protocol!.milestones[index]
+              : templateProtocol(old.protocol!.workType).milestones[0];
+          }),
+        };
+      }
+      return next;
+    });
   }
   function milestoneField(
     index: number,
@@ -221,17 +239,19 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
               />
             </label>
           ))}
-          <label>
-            Review window (hours)
-            <input
-              type="number"
-              min={1}
-              max={720}
-              required
-              value={form.reviewHours}
-              onChange={(e) => field("reviewHours", Number(e.target.value))}
-            />
-          </label>
+          {!form.protocol ? (
+            <label>
+              Review window (hours)
+              <input
+                type="number"
+                min={1}
+                max={720}
+                required
+                value={form.reviewHours}
+                onChange={(e) => field("reviewHours", Number(e.target.value))}
+              />
+            </label>
+          ) : null}
           <label>
             Backup activates after dispute (hours)
             <input
@@ -257,13 +277,20 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
             checked={reviewersAgreed}
             onChange={(event) => setReviewersAgreed(event.target.checked)}
           />
-          Both reviewers have agreed to serve, and I understand disputed funds
-          may stay locked if nobody resolves the dispute.
+          {form.protocol
+            ? "Both reviewers have agreed to serve. PAP decisions are recorded off-chain and cannot transfer funds."
+            : "Both reviewers have agreed to serve, and I understand disputed funds may stay locked if nobody resolves the dispute."}
         </label>
+        <PapBuilder
+          value={form.protocol}
+          count={form.milestones.length}
+          allowEnable={!initial}
+          onChange={(p) => field("protocol", p)}
+        />
         <h3>Sequential milestones</h3>
         <p className="muted">
-          Only one milestone can be funded at a time. Dates use your browser’s
-          local timezone and are stored in UTC.
+          Milestones execute in order. Dates use your browser’s local timezone
+          and are stored in UTC.
         </p>
         {form.milestones.map((m, i) => (
           <section className="editor-milestone" key={i}>
@@ -312,7 +339,9 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
               />
             </label>
             <label>
-              Acceptance criteria
+              {form.protocol
+                ? "Additional milestone-wide acceptance criteria (all apply)"
+                : "Acceptance criteria"}
               <textarea
                 required
                 minLength={10}
@@ -367,10 +396,16 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
           + Add milestone
         </button>
         <p className="notice">
-          Saving creates shared terms and makes no deposit. In Payment actions,
-          create the escrow and have both participants accept the deployed
-          program-bound terms before funding. TEST tokens have no monetary
-          value.
+          {form.protocol ? (
+            "PAP saves shared terms and makes no deposit. Rule execution and payment eligibility are off-chain; token transfers are unavailable for this policy profile."
+          ) : (
+            <>
+              Saving creates shared terms and makes no deposit. In Payment
+              actions, create the escrow and have both participants accept the
+              deployed program-bound terms before funding. TEST tokens have no
+              monetary value.
+            </>
+          )}
         </p>
         {error ? (
           <p role="alert" className="error-message">
