@@ -121,6 +121,8 @@ try {
       "--use-rpc",
       "--max-sign-attempts",
       "20",
+      "--with-compute-unit-price",
+      "10000",
     ]);
   const deployed = await connection.getAccountInfo(pd, "finalized");
   if (

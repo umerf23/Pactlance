@@ -39,6 +39,12 @@ Local verification on 2026-10-09 passed the application production build, 132 ap
 
 Upgrade rollback needs review: never downgrade the program to legacy-only code while PAP funds remain locked. Disabling `PAP_PAYMENTS_ENABLED` hides app payment preparation and retains terms/history, but does not revoke existing chain authority. Keep a compatible manual recovery procedure available for funded projects. Do not drop history tables or rewrite agreed hashes.
 
+### Deployment upload expiry
+
+If compilation succeeds but `Data writes to account failed` follows repeated `Blockhash expired` messages, the upgrade is not verified. Keep `PAP_PAYMENTS_ENABLED=false`. The upgrade script reuses `contracts/deploy-keys/buffer-keypair.json` and the existing program identity on retry; preserve those files. It sends through RPC with 20 blockhash retries and a priority fee of 10,000 micro-lamports per compute unit, following [Solana's deployment guidance](https://solana.com/docs/programs/deploying#deployment-flags). This can improve transaction inclusion but does not guarantee that a delayed or restricted RPC will deliver uploads.
+
+Use the devnet RPC endpoint that worked for the original deployment, or a dedicated provider's devnet endpoint, for local `DEPLOY_CLI_RPC_URL`. Avoid blindly repeating the same failing transport. The script checks both the verification RPC and deployment RPC against devnet genesis before any deployment. Keep provider API keys in the ignored `.env.local`; do not put them in Git or share the full endpoint. Then rerun `npm run upgrade:pap:devnet -- --upgrade`. Continue to the synthetic test only after the script verifies finalized deployed bytes, authority and PAP capability.
+
 ## Two-wallet browser run
 
 1. Sign in with separate client and freelancer profiles. Create and jointly sign/activate a fresh PAP agreement. In the payment workspace review profile, version, both identities, program/mint and bound commitment. Create escrow and independently accept deployed terms with both wallets.
