@@ -1,4 +1,4 @@
-import { ProjectPreview } from "@/components/project-preview";
+import { LandingPage } from "@/components/landing-page";
 export default function Home() {
-  return <ProjectPreview />;
+  return <LandingPage />;
 }

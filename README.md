@@ -19,6 +19,20 @@ CI baseline: [`44e487d`](https://github.com/umerf23/Pactlance/actions/runs/37909
 - [Phase 8 usability, validation and deferred test checklist](docs/phase-8.md)
 - [Architecture and trust boundaries](docs/architecture-and-trust.md)
 - [Demo and submission outline](docs/demo-script.md)
+- [Customer workflow, startup hypotheses and rollout gates](docs/startup-readiness.md)
+
+## Customer workflow
+
+The homepage explains the payment product and opens the authenticated workspace.
+Either the client or freelancer can create an agreement. Share its private
+workspace link with the other participant; access remains wallet-authorized.
+Wallet balance checks, role-specific next actions and readable TEST refund
+amounts support the funding/delivery/settlement journey. `/guide` explains its
+rules; `/preview` contains explicitly labelled sample data.
+
+These improvements do not replace a recorded two-wallet live run. The reviewer
+availability acknowledgement is a creator attestation, not proof that a reviewer
+will act. See the startup readiness checklist for remaining observations.
 
 ## Run the application
 
@@ -34,6 +48,7 @@ Open http://localhost:3000. Configure `.env.local` from `.env.example` and follo
 ```sh
 npm run check        # ESLint, TypeScript, application tests, production build
 npm run test:program # Native Rust tests; Rust 1.90.0
+npm run check:deployment # Operator read-only hosted config/quota check; set APP_URL
 ```
 
 ## Apply the audit hardening checkpoint

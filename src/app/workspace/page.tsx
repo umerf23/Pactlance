@@ -1,9 +1,15 @@
 import { WalletProviders } from "@/components/wallet-providers";
 import { Workspace } from "@/components/workspace";
-export default function WorkspacePage() {
+import { projectIdFromLink } from "@/lib/project-links";
+export default async function WorkspacePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ project?: string | string[] }>;
+}) {
+  const initialProjectId = projectIdFromLink((await searchParams).project);
   return (
     <WalletProviders>
-      <Workspace />
+      <Workspace initialProjectId={initialProjectId} />
     </WalletProviders>
   );
 }

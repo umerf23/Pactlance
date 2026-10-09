@@ -8,7 +8,7 @@ validatePublicConfig({
 export const metadata: Metadata = {
   title: "Pactlance | Work with confidence",
   description:
-    "Milestone payment protection for independent work. Development preview.",
+    "Milestone agreements and Solana devnet escrow for Pakistani freelancers and overseas clients. Verify funding before work begins.",
 };
 export default function RootLayout({
   children,

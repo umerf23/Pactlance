@@ -43,3 +43,18 @@ it("denies quota reset and invocation to browser roles", async () => {
     ).rejects.toThrow(/permission denied/);
   }
 });
+it("supports a read-only operator probe that fails before touching counters", async () => {
+  await db.exec("reset role; set role service_role");
+  const before = await db.query(
+    "select * from private.api_limits order by user_id,scope",
+  );
+  await expect(
+    db.query("select consume_api_limit($1,'read',0)", [
+      "00000000-0000-4000-8000-000000000000",
+    ]),
+  ).rejects.toThrow("invalid limit");
+  const after = await db.query(
+    "select * from private.api_limits order by user_id,scope",
+  );
+  expect(after.rows).toEqual(before.rows);
+});

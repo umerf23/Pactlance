@@ -52,7 +52,7 @@ Eligible timeout claims and execution of already authorized mutual settlements a
 | Deadline/claim/refund/dispute/primary-backup/cancel/revision rules        | Confirmed (VM)                                    | Before/exact expiry, exclusive backup switch, stale allocations, future-only revisions, replay and atomic transfer rollback cases. Manual before/at/after live observations not run.                             |
 | Worker/RPC unknown outcome, crash, race, expiry/finality                  | Confirmed (fault-injection unit)                  | Durable persistence before broadcast; exact bytes/signature; no lower-status regression; DB failures observable. Live outage/restart not run.                                                                    |
 | History backfill/duplicate cursor handling                                | Confirmed (source/unit/database)                  | Cursor CAS, unique events and finalized snapshots; real missed-event drill not run.                                                                                                                              |
-| Auth binding/CSRF/strict schemas/body limits/rate limits                  | Confirmed (source/tests)                          | Wallet identity from verified Auth identity, exact origin, bounded stream, strict schema, new shared counter. Hosted counter migration not applied.                                                              |
+| Auth binding/CSRF/strict schemas/body limits/rate limits                  | Confirmed (source/tests)                          | Wallet identity from verified Auth identity, exact origin, bounded stream, strict schema, new shared counter. Hosted quota migration was subsequently applied and verified on 9 October 2026.                    |
 | RLS/privileged grants/private bucket                                      | Confirmed (read-only hosted config + local tests) | Private 20 MiB bucket; insert/read policies only; role-isolation tests; hosted signed-in data access not exercised.                                                                                              |
 | Evidence guessing, URL lifetime, hash/format/immutability                 | Confirmed (source/tests)                          | 60-second authenticated signed URL, immutable completion, size/hash/format verification; actual hosted expiry not observed.                                                                                      |
 | Secret ignore/server-only/cron comparison                                 | Confirmed (source/heuristic)                      | Ignored local env/keypairs; server-only imports; timing-safe comparison of hashed bearer token. Entropy, custody, provider logs and live token configuration not inspected.                                      |
@@ -88,7 +88,7 @@ The migration is isolated/additive. If rollout fails, revert app code to the pre
 
 ## 6. Applied patch and exact checks
 
-Code changes are in the local `audit-remediation` branch. No GitHub write, hosted schema write, program upgrade or Vercel redeployment has been performed as part of this review.
+The original local review made no external writes. Subsequently, at the user's request, the audit fixes were published as [PR #2](https://github.com/umerf23/Pactlance/pull/2), now merged. Checks passed on the published head `1de2816`. A later read-only deployment check still found the hosted quota function absent. The customer-journey checkpoint and its remaining rollout gates are described in [startup readiness](startup-readiness.md).
 
 | Command                                                                         | Exit/result                                                                                                                                        |
 | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -149,3 +149,7 @@ The following locations are generated from the patch's actual files, not inferre
 | `supabase/migrations/20261009094002_audit_api_limits.sql` | 14   | `create function public.consume_api_limit`    |
 | `contracts/programs/pactlance/src/lib.rs`                 | 300  | `pub fn resolve_dispute`                      |
 | `contracts/programs/pactlance/src/lib.rs`                 | 168  | `pub fn claim_after_review`                   |
+
+## Approved hosted quota rollout — 9 October 2026
+
+The user approved the external rollout. `audit_api_limits` is applied; function existence, RLS, server-only grants and request cutoff were verified. The cutoff test ran in a rolled-back transaction. Earlier missing-function observations above describe the pre-migration state. See [startup readiness](startup-readiness.md) for remaining live/customer gates.

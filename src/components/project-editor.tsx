@@ -44,6 +44,44 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [role, setRole] = useState<"freelancer" | "client">("freelancer");
+  const [reviewersAgreed, setReviewersAgreed] = useState(false);
+  function chooseRole(next: "freelancer" | "client") {
+    setRole(next);
+    setForm((old) => ({
+      ...old,
+      clientWallet:
+        next === "client"
+          ? wallet
+          : old.clientWallet === wallet
+            ? ""
+            : old.clientWallet,
+      freelancerWallet:
+        next === "freelancer"
+          ? wallet
+          : old.freelancerWallet === wallet
+            ? ""
+            : old.freelancerWallet,
+    }));
+  }
+  function useEditingTemplate() {
+    setForm((old) => ({
+      ...old,
+      title: "Video editing agreement",
+      scope:
+        "Edit a batch of client-supplied videos using the agreed brand assets and reference style. Review and customize these terms together before accepting.",
+      milestones: [
+        {
+          ...blankMilestone(),
+          title: "First video batch",
+          scope:
+            "Deliver five edited videos from the supplied footage, including captions and the agreed end card.",
+          acceptanceCriteria:
+            "Five MP4 files, 1080p, with readable captions, balanced audio and the agreed brand assets. Confirm exact lengths and any permitted revisions before signing.",
+        },
+      ],
+    }));
+  }
   function field<K extends keyof AgreementInput>(
     key: K,
     value: AgreementInput[K],
@@ -65,6 +103,12 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    if (!reviewersAgreed) {
+      setError(
+        "Confirm that both reviewers have agreed to serve before saving.",
+      );
+      return;
+    }
     const parsed = agreementInput.safeParse(form);
     if (!parsed.success) {
       setError(
@@ -99,6 +143,38 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
         version; both wallets must sign it separately.
       </p>
       <fieldset disabled={busy}>
+        {!initial ? (
+          <>
+            <label>
+              Your role in this project
+              <select
+                value={role}
+                onChange={(event) =>
+                  chooseRole(event.target.value as "client" | "freelancer")
+                }
+              >
+                <option value="freelancer">
+                  Freelancer — I deliver the work
+                </option>
+                <option value="client">Client — I fund the work</option>
+              </select>
+            </label>
+            <details>
+              <summary>Start with an editable video-editing template</summary>
+              <p>
+                This replaces your current scope and milestones. Amounts and
+                terms are examples; agree on your own scope and deadlines.
+              </p>
+              <button
+                type="button"
+                className="secondary"
+                onClick={useEditingTemplate}
+              >
+                Use video-editing template
+              </button>
+            </details>
+          </>
+        ) : null}
         <label>
           Project title
           <input
@@ -134,8 +210,11 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
                 spellCheck={false}
                 autoComplete="off"
                 readOnly={
-                  !!initial &&
-                  (key === "clientWallet" || key === "freelancerWallet")
+                  (!!initial &&
+                    (key === "clientWallet" || key === "freelancerWallet")) ||
+                  (!initial &&
+                    key ===
+                      (role === "client" ? "clientWallet" : "freelancerWallet"))
                 }
                 value={form[key]}
                 onChange={(e) => field(key, e.target.value)}
@@ -167,6 +246,20 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
             />
           </label>
         </div>
+        <p className="muted">
+          Use four distinct Solana wallets. Contact both reviewers before naming
+          them; agree on availability, response time and any fee. Naming a
+          wallet does not prove its owner has agreed to review.
+        </p>
+        <label className="check-label">
+          <input
+            type="checkbox"
+            checked={reviewersAgreed}
+            onChange={(event) => setReviewersAgreed(event.target.checked)}
+          />
+          Both reviewers have agreed to serve, and I understand disputed funds
+          may stay locked if nobody resolves the dispute.
+        </label>
         <h3>Sequential milestones</h3>
         <p className="muted">
           Only one milestone can be funded at a time. Dates use your browser’s
@@ -274,8 +367,10 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
           + Add milestone
         </button>
         <p className="notice">
-          No deposits in Phase 3. Before funding, a later version must specify
-          the deployed program and test-token mint and be accepted again.
+          Saving creates shared terms and makes no deposit. In Payment actions,
+          create the escrow and have both participants accept the deployed
+          program-bound terms before funding. TEST tokens have no monetary
+          value.
         </p>
         {error ? (
           <p role="alert" className="error-message">
