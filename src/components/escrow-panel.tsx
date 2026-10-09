@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
+  ComputeBudgetProgram,
   PublicKey,
   Transaction,
   type TransactionInstruction,
@@ -438,7 +439,11 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         tx = new Transaction({
           feePayer: who,
           recentBlockhash: block.blockhash,
-        }).add(...ixs);
+        }).add(
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 400000 }),
+          ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
+          ...ixs,
+        );
       await signed(tx, block.lastValidBlockHeight, action);
     } catch (e) {
       setError((e as Error).message);
