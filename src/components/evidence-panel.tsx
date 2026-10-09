@@ -171,7 +171,8 @@ export function EvidencePanel({
       <h3>Private evidence · milestone {index + 1}</h3>
       <p className="muted">
         Agreement version {version}. Completed records cannot be overwritten.
-        Saving evidence does not start the on-chain review clock.
+        Saving evidence does not start the on-chain review clock. A matching
+        hash verifies bytes only, not quality, correctness or authorship.
       </p>
       {error && (
         <p role="alert" className="error-message">

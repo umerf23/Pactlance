@@ -1,6 +1,6 @@
 # Phase 5 — complete settlement rules
 
-Status: contract and TypeScript client implemented and verified locally. No program deployment or wallet payment UI is included in this phase.
+Historical Phase 5 checkpoint: contract and TypeScript client were verified locally; deployment and payment UI followed in Phase 7. See the [current audit status](audit-remediation.md).
 
 ## Settlement rules
 
@@ -63,4 +63,4 @@ These are in-process Solana runtime tests. Devnet, browser payment signing and h
 
 ## Remaining project work
 
-Phase 6 adds private evidence, reviewer screens, reminders, support views and transaction history. Phase 7 adds deployment and end-to-end wallet integration/reconciliation. Eligible claims require a submitted transaction; there is no automatic on-chain timer. If neither reviewer nor both participants act, disputed funds can remain locked. Recovery of donated excess is deferred; it does not prevent settlement of the recorded obligation. Vercel deployment remains paused.
+Phase 6 adds private evidence, reviewer screens, reminders, support views and transaction history. Phase 7 adds deployment and end-to-end wallet integration/reconciliation. Eligible claims require a submitted transaction; there is no automatic on-chain timer. If neither reviewer nor both participants act, disputed funds can remain locked. Recovery of donated excess is deferred; it does not prevent settlement of the recorded obligation. Hosting is now available at https://pactlance.vercel.app/; see the current [audit status](audit-remediation.md).

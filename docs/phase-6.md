@@ -1,6 +1,6 @@
 # Phase 6 — private evidence and operations
 
-Implemented: private file/link evidence, reviewer evidence screens, in-app reminders, support notes, and transaction history with devnet explorer links. Vercel deployment remains paused. No escrow program is deployed; Phase 7 supplies the wallet payment flows and trusted chain reconciliation that populate live activity.
+Implemented: private file/link evidence, reviewer evidence screens, in-app reminders, support notes, and transaction history with devnet explorer links. Hosting is now available at https://pactlance.vercel.app/; see the current [audit status](audit-remediation.md). At the original Phase 6 checkpoint, deployment was pending. Phase 7 subsequently supplied the devnet deployment, wallet payment flows and chain reconciliation.
 
 ## Evidence workflow
 

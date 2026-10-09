@@ -9,8 +9,8 @@ import {
   requireWallet,
 } from "@/lib/api";
 import { adminSupabase } from "@/lib/supabase/server";
-async function support() {
-  const a = await requireWallet();
+async function support(scope: "read" | "write" = "read") {
+  const a = await requireWallet(scope);
   const { data, error } = await a.db
     .from("support_members")
     .select("user_id")
@@ -53,7 +53,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    const a = await support();
+    const a = await support("write");
     const p = z
       .object({
         projectId: z.string().uuid(),
@@ -62,14 +62,12 @@ export async function POST(request: Request) {
       .strict()
       .safeParse(await readJSON(request));
     if (!p.success) throw new ApiError(400, "Invalid support note.");
-    const { error } = await adminSupabase()
-      .from("support_notes")
-      .insert({
-        id: randomUUID(),
-        project_id: p.data.projectId,
-        author_id: a.userId,
-        note: p.data.note,
-      });
+    const { error } = await adminSupabase().from("support_notes").insert({
+      id: randomUUID(),
+      project_id: p.data.projectId,
+      author_id: a.userId,
+      note: p.data.note,
+    });
     if (error)
       throw new ApiError(400, "Project not found or note could not be saved.");
     return json({ saved: true }, 201);

@@ -18,7 +18,8 @@ async function setup() {
     signer = Keypair.generate();
   vi.stubEnv("CLAIM_WORKER_SECRET_KEY", bs58.encode(signer.secretKey));
   let old: Record<string, unknown> | null = null,
-    win = true;
+    win = true,
+    storageError: { code: string } | null = null;
   const order: string[] = [];
   const admin = {
     from: () => {
@@ -43,14 +44,17 @@ async function setup() {
         },
         maybeSingle: async () => {
           if (write) {
+            if (storageError) return { data: null, error: storageError };
             if (!win) return { data: null, error: { code: "23505" } };
             old = { ...old, ...row, created_at: new Date().toISOString() };
             return { data: old, error: null };
           }
           return { data: old, error: null };
         },
-        then: (resolve: (v: unknown) => unknown) =>
-          Promise.resolve(resolve({ data: null, error: null })),
+        then: (resolve: (v: unknown) => unknown) => {
+          if (write) old = { ...old, ...row };
+          return Promise.resolve(resolve({ data: null, error: null }));
+        },
       };
       return q;
     },
@@ -91,6 +95,9 @@ async function setup() {
       win = false;
     },
     saved: () => old,
+    failStorage: () => {
+      storageError = { code: "08006" };
+    },
   };
 }
 it("persists a signed claim before broadcasting", async () => {
@@ -125,4 +132,54 @@ it("recovers exact signed bytes after an RPC failure even without the original s
   expect(f.connection.sendRawTransaction.mock.calls[0][0]).toEqual(
     f.connection.sendRawTransaction.mock.calls[1][0],
   );
+});
+
+it("reports storage outages rather than falsely claiming another worker owns the item", async () => {
+  const f = await setup();
+  f.failStorage();
+  await expect(runProjectWorker(f.p.a.terms.projectId)).rejects.toThrow(
+    /persistence unavailable/,
+  );
+  expect(f.connection.sendRawTransaction).not.toHaveBeenCalled();
+});
+it("recovers finalization after a crash without broadcasting a second transaction", async () => {
+  const f = await setup();
+  await runProjectWorker(f.p.a.terms.projectId);
+  vi.stubEnv("CLAIM_WORKER_SECRET_KEY", "");
+  f.connection.getSignatureStatuses.mockResolvedValue({
+    value: [{ err: null, confirmationStatus: "finalized" }],
+  });
+  expect((await runProjectWorker(f.p.a.terms.projectId)).claims).toBe(
+    "finalized",
+  );
+  expect(f.saved()?.status).toBe("finalized");
+  expect(f.connection.sendRawTransaction).toHaveBeenCalledOnce();
+});
+it("never regresses a confirmed outbox on inconsistent RPC history", async () => {
+  const f = await setup();
+  await runProjectWorker(f.p.a.terms.projectId);
+  f.connection.getSignatureStatuses.mockResolvedValueOnce({
+    value: [{ err: null, confirmationStatus: "confirmed" }],
+  });
+  await runProjectWorker(f.p.a.terms.projectId);
+  expect(f.saved()?.status).toBe("confirmed");
+  await runProjectWorker(f.p.a.terms.projectId);
+  expect(f.saved()?.status).toBe("confirmed");
+});
+it("waits for finalized expiration before permitting a new claim", async () => {
+  const f = await setup();
+  await runProjectWorker(f.p.a.terms.projectId);
+  f.connection.getBlockHeight.mockImplementation(async (commitment?: string) =>
+    commitment === "finalized" ? 99 : 101,
+  );
+  expect((await runProjectWorker(f.p.a.terms.projectId)).claims).toBe(
+    "awaiting_finality",
+  );
+  expect(f.saved()?.status).toBe("pending");
+  expect(f.connection.sendRawTransaction).toHaveBeenCalledOnce();
+  f.connection.getBlockHeight.mockResolvedValue(101);
+  expect((await runProjectWorker(f.p.a.terms.projectId)).claims).toBe(
+    "expired_reconciled",
+  );
+  expect(f.saved()?.status).toBe("expired");
 });

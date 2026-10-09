@@ -1,6 +1,6 @@
 # Phase 4 — sequential milestone escrow
 
-Status: Phase 4 contract and client implementation verified locally. Not deployed; no payment UI is enabled.
+Historical Phase 4 checkpoint: contract/client verification preceded deployment and the payment UI. Current deployment and validation status is in [the audit report](audit-remediation.md).
 
 ## Implemented contract instructions
 
@@ -41,4 +41,4 @@ LiteSVM 1.5.0 is pinned. The test harness uses its internal legacy-transaction A
 
 ## Later phases
 
-Phase 5 adds timeout claims, refunds, disputes, reviewer settlement, mutual cancellation and accepted revisions for expired future deadlines. Excess-token recovery is also deferred. Use only disposable local test tokens until those protections exist. Phase 7 adds devnet deployment, reconciliation and the hosted flow. Vercel deployment remains paused.
+Phase 5 adds timeout claims, refunds, disputes, reviewer settlement, mutual cancellation and accepted revisions for expired future deadlines. Excess-token recovery is also deferred. Use only disposable local test tokens until those protections exist. Phase 7 adds devnet deployment, reconciliation and the hosted flow. Hosting is now available at https://pactlance.vercel.app/; see the current [audit status](audit-remediation.md).

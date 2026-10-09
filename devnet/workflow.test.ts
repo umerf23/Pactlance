@@ -1,5 +1,5 @@
 // Explicit opt-in: creates synthetic devnet wallets/projects and spends SOL/TEST tokens.
-import { it, expect } from "vitest";
+import { beforeAll, it, expect } from "vitest";
 import {
   Connection,
   Keypair,
@@ -14,7 +14,8 @@ import {
   mintToChecked,
   getAccount,
 } from "@solana/spl-token";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { makeTerms } from "../src/lib/agreements/schema";
 import { agreementCommitment } from "../src/lib/agreements/crypto";
@@ -35,6 +36,27 @@ import {
   openDisputeInstruction,
   resolveDisputeInstruction,
 } from "../src/lib/escrow/client";
+// Reset prior evidence before configuration/network checks, so an early failure
+// cannot leave an older successful run looking like the current result.
+beforeAll(() => {
+  mkdirSync("validation-results", { recursive: true });
+  writeFileSync(
+    "validation-results/devnet-workflow.json",
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        kind: "scripted-devnet-program-test",
+        status: "in_progress",
+        checkedAt: new Date().toISOString(),
+        transactions: [],
+        limitation:
+          "This run has not completed. No passing result is established.",
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+});
 it("executes sequential funding, approval, dispute allocation and finalized recovery on devnet", async () => {
   const path = process.env.DEPLOYER_KEYPAIR,
     program = process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID,
@@ -138,9 +160,44 @@ it("executes sequential funding, approval, dispute allocation and finalized reco
     if (!account) throw new Error("Project account missing.");
     return account;
   }
+  const evidence = {
+    schemaVersion: 1,
+    kind: "scripted-devnet-program-test",
+    status: "in_progress",
+    checkedAt: new Date().toISOString(),
+    commit: execFileSync("git", ["rev-parse", "HEAD"], {
+      encoding: "utf8",
+    }).trim(),
+    network: "devnet",
+    boundCommitment: a.commitment,
+    program,
+    mint: mintAddress,
+    project: id,
+    participants: {
+      client: client.publicKey.toBase58(),
+      freelancer: freelancer.publicKey.toBase58(),
+    },
+    transactions: [] as {
+      action: string;
+      signature: string;
+      explorer: string;
+      commitment: string;
+    }[],
+    limitations:
+      "Generated independent test signers. Does not test Supabase sign-in, browser wallet prompts, private uploads or human usability.",
+  };
+  function saveEvidence() {
+    mkdirSync("validation-results", { recursive: true });
+    writeFileSync(
+      "validation-results/devnet-workflow.json",
+      JSON.stringify(evidence, null, 2) + "\n",
+    );
+  }
+  saveEvidence();
   async function send(
     ix: Awaited<ReturnType<typeof createProjectInstruction>>,
     signers: Keypair[],
+    action: string,
   ) {
     const block = await c.getLatestBlockhash("confirmed"),
       tx = new Transaction({
@@ -160,34 +217,63 @@ it("executes sequential funding, approval, dispute allocation and finalized reco
       }),
       result = await c.confirmTransaction({ ...block, signature }, "finalized");
     expect(result.value.err).toBeNull();
+    evidence.transactions.push({
+      action,
+      signature,
+      explorer: `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+      commitment: "finalized",
+    });
+    saveEvidence();
     return saved;
   }
-  await send(await createProjectInstruction(a, client.publicKey), [client]);
+  await send(
+    await createProjectInstruction(a, client.publicKey),
+    [client],
+    "create_project",
+  );
   await send(
     await acceptProjectInstruction(a, client.publicKey, await project()),
     [client],
+    "accept_client",
   );
   await send(
     await acceptProjectInstruction(a, freelancer.publicKey, await project()),
     [freelancer],
+    "accept_freelancer",
   );
   const funded = await send(
     await fundInstruction(a, 0, ca.address, await project()),
     [client],
+    "fund_first",
   );
   await expect(
     fundInstruction(a, 1, ca.address, await project()),
   ).rejects.toThrow(/not ready/);
   expect(await recoverTransaction(c, funded, true)).toBe("finalized");
-  await send(await submitInstruction(a, 0, "b".repeat(64)), [freelancer]);
-  await send(await approveInstruction(a, 0, fa.address), [client]);
-  await send(await fundInstruction(a, 1, ca.address, await project()), [
-    client,
-  ]);
-  await send(await submitInstruction(a, 1, "c".repeat(64)), [freelancer]);
+  await send(
+    await submitInstruction(a, 0, "b".repeat(64)),
+    [freelancer],
+    "deliver_first",
+  );
+  await send(
+    await approveInstruction(a, 0, fa.address),
+    [client],
+    "approve_first",
+  );
+  await send(
+    await fundInstruction(a, 1, ca.address, await project()),
+    [client],
+    "fund_second",
+  );
+  await send(
+    await submitInstruction(a, 1, "c".repeat(64)),
+    [freelancer],
+    "deliver_second",
+  );
   await send(
     await openDisputeInstruction(a, 1, client.publicKey, "d".repeat(64)),
     [client],
+    "open_dispute",
   );
   await send(
     await resolveDisputeInstruction(
@@ -200,6 +286,7 @@ it("executes sequential funding, approval, dispute allocation and finalized reco
       60000000n,
     ),
     [reviewer],
+    "resolve_dispute",
   );
   const state = await readEscrow(c, [record], program, mintAddress);
   expect(state.state?.next).toBe(2);
@@ -209,4 +296,6 @@ it("executes sequential funding, approval, dispute allocation and finalized reco
   expect((await getAccount(c, fa.address, "finalized")).amount).toBe(
     160000000n,
   );
+  evidence.status = "passed";
+  saveEvidence();
 }, 300000);

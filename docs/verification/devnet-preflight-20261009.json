@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "kind": "read-only-devnet-preflight",
+  "checkedAt": "2026-10-09T09:44:57.974Z",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "finalizedSlot": 509137571,
+  "program": "9T95KC5YSQ7LV2KwUcY7SyBu6cYF6Urv8fXd7kYaWNpL",
+  "programData": "7YPr3mixggpZVSotDCPaQm3GUpTaGraH4JPdE7sFUP3w",
+  "upgradeAuthority": "Aze8iw5WsDm1YSM78hfT9NscGrR5L4VWxtAVhUNtdRDY",
+  "lastUpgradeSlot": "508915277",
+  "executableCodeSha256": "037c0631d799d64a4a1479c4a66fc9e4dadab7fee2e93ee1b7371a43a5d0937d",
+  "mint": "JCEk9179tFu5y8UQ6oMFSPrDybkXDkhoxMiom2FpyuU7",
+  "decimals": 6,
+  "mintAuthority": "Aze8iw5WsDm1YSM78hfT9NscGrR5L4VWxtAVhUNtdRDY",
+  "freezeAuthority": null,
+  "limitation": "Read-only identities and configuration verified; no lifecycle, browser wallet or source-to-deployed-binary verification."
+}

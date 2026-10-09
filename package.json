@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "check": "npm run check:secrets && npm run lint && npm run typecheck && npm test && npm run build",
     "doctor": "node scripts/doctor.mjs",
     "test:program": "cargo test --manifest-path contracts/Cargo.toml",
     "format": "prettier --write .",
@@ -23,7 +23,8 @@
     "worker": "node --env-file-if-exists=.env.local scripts/worker-loop.mjs",
     "deploy:devnet": "node --env-file-if-exists=.env.local scripts/deploy-devnet.mjs",
     "mint:test": "node --env-file-if-exists=.env.local scripts/mint-test-tokens.mjs",
-    "test:devnet": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run devnet"
+    "test:devnet": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run devnet",
+    "check:secrets": "node scripts/check-secrets.mjs"
   },
   "dependencies": {
     "@anchor-lang/core": "0.32.2",

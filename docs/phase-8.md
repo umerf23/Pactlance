@@ -1,6 +1,6 @@
 # Phase 8 — usability, validation and submission
 
-Status: in progress. Live testing is deferred at the user's request, not marked complete.
+Status: in progress. The app is hosted; final live testing and user trials remain pending, not marked complete. See [audit remediation](audit-remediation.md).
 
 ## Implemented in this checkpoint
 
@@ -50,4 +50,4 @@ For each consenting participant use an anonymous code, role and date. Ask them t
 
 ## Submission handoff
 
-Use `docs/demo-script.md` for the recording and `docs/architecture-and-trust.md` for limitations. Capture the final workflow only after verification. Hosting remains paused. Phase 7 and Phase 8 completion gates remain open.
+Use `docs/demo-script.md` for the recording and `docs/architecture-and-trust.md` for limitations. Capture the final workflow only after verification. Hosting is available at https://pactlance.vercel.app/. Phase 7 and Phase 8 completion gates remain open.

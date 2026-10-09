@@ -86,7 +86,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    const auth = await requireWallet();
+    const auth = await requireWallet("write");
     const p = z
       .object({ noticeKey: z.string().regex(/^[a-f0-9]{64}$/) })
       .strict()

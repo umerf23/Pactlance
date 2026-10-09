@@ -7,7 +7,7 @@ import {
 import { jsonSafe } from "@/lib/escrow/snapshot";
 export async function GET(request: Request) {
   try {
-    const auth = await requireWallet(),
+    const auth = await requireWallet("escrow"),
       id = new URL(request.url).searchParams.get("project");
     if (!z.string().uuid().safeParse(id).success)
       throw new ApiError(404, "Project not found.");
