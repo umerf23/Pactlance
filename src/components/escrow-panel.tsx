@@ -566,7 +566,11 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
     /^(0|[1-9][0-9]{0,19})$/.test(clientUnits) &&
     BigInt(clientUnits) <= BigInt(m.amount);
   return (
-    <section className="workspace-card escrow-panel" aria-busy={busy}>
+    <section
+      id="project-escrow"
+      className="workspace-card escrow-panel"
+      aria-busy={busy}
+    >
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">PAYMENT WORKSPACE</p>

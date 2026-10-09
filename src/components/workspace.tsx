@@ -77,6 +77,7 @@ export function Workspace() {
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
@@ -279,7 +280,7 @@ export function Workspace() {
       (filter === "client" ? p.client_wallet : p.freelancer_wallet) === address,
   );
   return (
-    <div className="live-workspace">
+    <div className={`live-workspace dapp-workspace dapp-${theme}`}>
       <header>
         <Link className="brand" href="/">
           <span className="workspace-brand-icon" aria-hidden="true">
@@ -287,25 +288,51 @@ export function Workspace() {
           </span>
           pactlance<span className="brand-dot">.</span>
         </Link>
+        <nav className="dapp-nav" aria-label="Workspace navigation">
+          <button
+            type="button"
+            aria-current={!detail ? "page" : undefined}
+            onClick={() => {
+              setDetail(null);
+              setCreating(false);
+              setEditing(false);
+            }}
+          >
+            Projects
+          </button>
+          {detail ? (
+            <>
+              <a href="#project-escrow">Escrow</a>
+              <a href="#project-evidence">Evidence</a>
+            </>
+          ) : null}
+          <Link href="/">Demo</Link>
+        </nav>
         <div className="wallet-actions">
-          <Link href="/">Sample project</Link>
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+          >
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
           {session?.configured ? <WalletButton /> : null}
         </div>
       </header>
       <main className="workspace-content">
         <div className="workspace-heading workspace-hero">
           <div>
-            <p className="eyebrow">YOUR WORK, WITH CLEARER TERMS</p>
+            <p className="eyebrow">PACTLANCE / WORKSPACE</p>
             <h1>
               {detail
-                ? "Every milestone matters."
+                ? "Project workspace"
                 : authenticated
-                  ? "Your next chapter of work."
-                  : "Good work starts with trust."}
+                  ? "Your projects"
+                  : "Milestone payments. On chain."}
             </h1>
             <p className="subtitle">
-              Private projects. Clear milestones. Two signatures on the same
-              terms.
+              Agree on terms. Fund one milestone at a time. Settle on Solana.
             </p>
           </div>
           <div className="workspace-hero-note">
@@ -361,8 +388,8 @@ export function Workspace() {
             <span className="signin-emblem" aria-hidden="true">
               ↗
             </span>
-            <p className="eyebrow">YOUR PRIVATE WORKSPACE</p>
-            <h2>Welcome to Pactlance.</h2>
+            <p className="eyebrow">WALLET AUTHENTICATION</p>
+            <h2>Connect. Verify. Get to work.</h2>
             <p>
               First connect a Solana wallet, then sign a message to verify
               ownership. Connecting alone does not sign you in.
@@ -432,7 +459,7 @@ export function Workspace() {
                   onEdit={() => setEditing(true)}
                   onBack={() => setDetail(null)}
                 />
-                <section className="workspace-card">
+                <section id="project-evidence" className="workspace-card">
                   <label>
                     Milestone evidence
                     <select
@@ -481,9 +508,7 @@ export function Workspace() {
                 >
                   <div>
                     <span>YOUR PROJECTS</span>
-                    <strong>
-                      {projects.length.toString().padStart(2, "0")}
-                    </strong>
+                    <strong>{projects.length}</strong>
                     <small>Private agreements in your workspace</small>
                   </div>
                   <div>

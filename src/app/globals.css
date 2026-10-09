@@ -1135,410 +1135,504 @@ footer {
   }
 }
 
-/* Pactlance workspace: warm surfaces, forest accents and readable hierarchy. */
-.live-workspace {
-  --ink: #203b34;
-  --muted: #64766c;
-  --green: #164d3b;
-  --line: #e1e7dd;
-  background:
-    radial-gradient(ellipse at 90% 0%, #e8efdf 0%, transparent 40%), #f6f7f2;
-  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+/* Application surfaces are intentionally flat; emphasis follows the next action. */
+.dapp-workspace {
+  --canvas: #111515;
+  --surface: #191e1e;
+  --inset: #141919;
+  --hover: #222b29;
+  --ink: #edf3f0;
+  --muted: #a0afaa;
+  --line: #303b37;
+  --accent: #b4f4ce;
+  --accent-ink: #132c20;
+  --green: #b4f4ce;
+  --soft-accent: #20382a;
+  --warn-bg: #352c1c;
+  --warn-ink: #ebcc88;
+  --error-bg: #352321;
+  --error-ink: #f1b0a1;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
   font-size: 14px;
+  min-height: 100vh;
+  color-scheme: dark;
 }
-.live-workspace > header {
-  height: 88px;
-  background: #ffffffeb;
-  border-color: #e2e7dd;
-  padding-inline: max(28px, calc((100vw - 1180px) / 2));
+.dapp-light {
+  --canvas: #f3f5f1;
+  --surface: #ffffff;
+  --inset: #f6f8f3;
+  --hover: #eaf0e4;
+  --ink: #20392e;
+  --muted: #596d60;
+  --line: #dbe3d6;
+  --accent: #23583c;
+  --accent-ink: #ffffff;
+  --green: #23583c;
+  --soft-accent: #e6f0de;
+  --warn-bg: #f6efdf;
+  --warn-ink: #765d24;
+  --error-bg: #fff0eb;
+  --error-ink: #953f2a;
+  color-scheme: light;
 }
-.live-workspace .brand {
-  letter-spacing: -1.3px;
-  font-size: 27px;
-  gap: 2px;
+.dapp-workspace > header {
+  height: 76px;
+  padding-inline: max(24px, calc((100vw - 1200px) / 2));
+  display: flex;
+  gap: 32px;
+  background: var(--canvas);
+  color: var(--muted);
+  border-color: var(--line);
+}
+.dapp-workspace .brand {
+  font-size: 25px;
+  gap: 0;
+  letter-spacing: -1px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.dapp-workspace .brand-dot {
+  color: var(--accent);
 }
 .workspace-brand-icon {
   display: grid;
   place-items: center;
-  width: 37px;
-  height: 40px;
-  margin-right: 10px;
-  border-radius: 12px 12px 12px 3px;
-  background: #174f3d;
-  color: #d9ebb4;
-  font-family: Georgia, serif;
-  font-style: italic;
-  font-size: 32px;
-  box-shadow: 0 4px 10px #214e3a15;
+  width: 32px;
+  height: 32px;
+  margin-right: 9px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font:
+    italic 27px Georgia,
+    serif;
 }
-.live-workspace .wallet-actions > a {
-  color: #536b5d;
-  font-weight: 600;
+.dapp-workspace .dapp-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
 }
-.live-workspace .wallet-adapter-button {
-  border-radius: 10px;
-  height: 44px;
-  padding-inline: 18px;
-  background: #164d3b;
+.dapp-workspace .dapp-nav a,
+.dapp-workspace .dapp-nav button {
+  padding: 9px 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  font: inherit;
   font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  min-height: 40px;
 }
-.live-workspace .workspace-content {
-  max-width: 1180px;
-  padding: 36px 28px 60px;
+.dapp-workspace .dapp-nav [aria-current="page"],
+.dapp-workspace .dapp-nav a:hover,
+.dapp-workspace .dapp-nav button:hover {
+  color: var(--ink);
+  background: var(--hover);
 }
-.workspace-hero {
-  position: relative;
-  padding: 36px 38px;
-  border: 1px solid #dce5d3;
-  border-radius: 22px;
-  background: linear-gradient(110deg, #edf2e4, #f4f6eb 70%, #e3ecd7);
-  min-height: 190px;
-  overflow: hidden;
+.dapp-workspace .wallet-actions {
+  gap: 10px;
+  flex-shrink: 0;
+}
+.dapp-workspace .theme-toggle {
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  min-height: 40px;
+}
+.dapp-workspace .wallet-adapter-button {
+  height: 40px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: 12px;
+  padding-inline: 16px;
+  font-weight: 650;
+}
+.dapp-workspace .workspace-content {
+  max-width: 1200px;
+  padding: 34px 24px 48px;
+}
+.dapp-workspace .workspace-hero {
+  min-height: 0;
+  padding: 8px 0 26px;
   margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  gap: 24px;
 }
-.workspace-hero::after {
-  content: "";
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  border: 1px solid #9caf8528;
-  border-radius: 50%;
-  right: -80px;
-  top: -100px;
-  box-shadow:
-    0 0 0 35px #9caf8509,
-    0 0 0 70px #9caf8506;
-  pointer-events: none;
+.dapp-workspace .workspace-hero::after {
+  display: none;
 }
-.workspace-hero > * {
-  position: relative;
-  z-index: 1;
-}
-.live-workspace .eyebrow {
+.dapp-workspace .eyebrow {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  color: var(--muted);
   font-size: 10px;
-  letter-spacing: 1.7px;
-  color: #647c54;
+  letter-spacing: 1.2px;
   margin-bottom: 10px;
   line-height: 1.5;
 }
-.workspace-hero h1 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(32px, 3.4vw, 45px);
-  letter-spacing: -1.5px;
-  line-height: 1.13;
-  max-width: 650px;
+.dapp-workspace h1 {
+  font-family: inherit;
+  font-size: clamp(28px, 3vw, 37px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -1.3px;
 }
-.live-workspace .subtitle {
-  font-size: 14px;
-  color: #62725f;
-  max-width: 520px;
-  line-height: 1.7;
+.dapp-workspace .subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
 }
 .workspace-hero-note {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   align-items: flex-end;
+  gap: 10px;
   flex-shrink: 0;
 }
 .workspace-hero-note > span:last-child {
+  font-size: 10px;
+  color: var(--muted);
+}
+.dapp-workspace .network {
+  background: var(--inset);
+  border-color: var(--line);
+  color: var(--accent);
   font-size: 11px;
-  color: #647459;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-family: Consolas, monospace;
 }
-.live-workspace .network {
-  background: #ffffffa6;
-  border-color: #d2dfc7;
-  font-weight: 600;
-  padding: 9px 14px;
-  font-size: 12px;
+.dapp-workspace .network i {
+  background: var(--accent);
 }
-.live-workspace .session-strip {
-  margin-top: 22px;
+.dapp-workspace .session-strip {
   background: transparent;
-  padding: 4px 0;
+  padding: 18px 0 0;
+  margin: 0;
+  font-size: 12px;
 }
 .session-identity {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 10px;
 }
 .session-avatar {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: #e3eadd;
-  color: #34513a;
-  font-size: 15px;
-  font-weight: 700;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 12px;
 }
 .session-identity strong {
   display: block;
-  font-size: 13px;
-  color: #203b34;
+  font-size: 12px;
+  font-weight: 600;
   margin-bottom: 4px;
 }
 .session-identity code {
+  color: var(--muted);
   font-size: 11px;
-  color: #6a7b6b;
 }
-.live-workspace .workspace-card {
-  margin-top: 24px;
-  padding: 30px 32px;
-  border-radius: 18px;
-  border: 1px solid #e0e6dc;
-  box-shadow: 0 5px 22px #203b3404;
-}
-.live-workspace .workspace-heading {
-  margin-bottom: 22px;
-}
-.live-workspace .workspace-hero {
-  margin-bottom: 0;
-}
-.live-workspace .workspace-heading h2 {
-  margin: 0;
-}
-.live-workspace h2 {
-  font-size: 24px;
-  font-weight: 650;
-  letter-spacing: -0.7px;
-}
-.live-workspace h3 {
-  font-weight: 600;
-  color: #294738;
-}
-.live-workspace .workspace-card > p {
-  color: #5c7062;
-}
-.live-workspace .primary,
-.live-workspace .escrow-panel button:not(.secondary) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  width: auto;
-  border-radius: 9px;
-  padding: 12px 20px;
-  background: #164d3b;
-  color: white;
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid #164d3b;
-  box-shadow: 0 3px 7px #164d3b12;
-  transition:
-    background-color 150ms,
-    border-color 150ms,
-    box-shadow 150ms;
-}
-.live-workspace .primary:hover:not(:disabled),
-.live-workspace .escrow-panel button:not(.secondary):hover:not(:disabled) {
-  background: #25634c;
-  border-color: #25634c;
-  box-shadow: 0 4px 10px #164d3b20;
-}
-.live-workspace .secondary {
-  min-height: 42px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 9px;
-  border-color: #d5dfce;
-  background: #f7f9f2;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 10px 16px;
-  margin-top: 0;
-}
-.live-workspace .secondary:hover:not(:disabled) {
-  background: #edf3e4;
-  border-color: #aebeaa;
-}
-.live-workspace .text-button {
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 6px;
-  min-height: 40px;
-}
-.live-workspace .text-button:hover {
-  background: #f0f4e9;
-}
-.live-workspace .workspace-card button:disabled {
-  opacity: 0.7;
-  background: #edf0e9;
-  border-color: #d9dfd3;
-  color: #62715e;
+.dapp-workspace .workspace-card {
+  padding: 26px;
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
   box-shadow: none;
 }
-.live-workspace .workspace-card label {
-  color: #4b6253;
+.dapp-workspace .workspace-heading {
+  margin-bottom: 20px;
+}
+.dapp-workspace .workspace-heading h2 {
+  margin-bottom: 0;
+}
+.dapp-workspace .workspace-hero {
+  margin-bottom: 0;
+}
+.dapp-workspace h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+}
+.dapp-workspace h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.dapp-workspace h4 {
+  color: var(--muted);
+}
+.dapp-workspace p {
+  color: var(--muted);
+}
+.dapp-workspace .primary,
+.dapp-workspace .escrow-panel button:not(.secondary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  width: auto;
+  padding: 11px 17px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: none;
+  transition: filter 130ms;
+}
+.dapp-workspace .primary:hover:not(:disabled),
+.dapp-workspace .escrow-panel button:not(.secondary):hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.dapp-workspace .secondary {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 12px;
+}
+.dapp-workspace .secondary:hover:not(:disabled) {
+  background: var(--hover);
+}
+.dapp-workspace .text-button {
+  color: var(--muted);
+  font-size: 12px;
+  min-height: 38px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.dapp-workspace .text-button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.dapp-workspace .workspace-card button:disabled {
+  opacity: 0.6;
+  background: var(--inset);
+  color: var(--muted);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.dapp-workspace button:focus-visible,
+.dapp-workspace a:focus-visible {
+  outline-color: var(--accent);
+}
+.dapp-workspace .workspace-card label {
+  color: var(--muted);
   font-size: 12px;
   gap: 8px;
-  letter-spacing: 0.1px;
   margin-block: 18px;
 }
-.live-workspace .workspace-card input:not([type="checkbox"]),
-.live-workspace .workspace-card textarea,
-.live-workspace .workspace-card select {
-  border-color: #dce3d5;
-  background: #fcfdf9;
-  border-radius: 9px;
-  padding: 13px 14px;
-  font-size: 14px;
+.dapp-workspace .workspace-card input:not([type="checkbox"]),
+.dapp-workspace .workspace-card textarea,
+.dapp-workspace .workspace-card select {
+  background: var(--inset);
+  color: var(--ink);
+  border-color: var(--line);
+  border-radius: 7px;
+  padding: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
-.live-workspace .workspace-card input:focus,
-.live-workspace .workspace-card textarea:focus,
-.live-workspace .workspace-card select:focus {
-  outline-color: #769965;
-  background: white;
+.dapp-workspace input[type="checkbox"] {
+  accent-color: var(--accent);
 }
-.live-workspace .filter-label {
-  max-width: 210px;
+.dapp-workspace .workspace-card input:focus,
+.dapp-workspace .workspace-card textarea:focus,
+.dapp-workspace .workspace-card select:focus {
+  outline-color: var(--accent);
 }
 .workspace-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 24px;
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
 }
 .workspace-metrics > div {
-  padding: 22px 24px;
-  border-radius: 15px;
-  border: 1px solid #e0e6d9;
-  background: #fff;
+  padding: 20px 24px;
+  border-right: 1px solid var(--line);
+}
+.workspace-metrics > div:last-child {
+  border-right: 0;
 }
 .workspace-metrics span {
   display: block;
-  font-size: 10px;
-  letter-spacing: 1.3px;
-  color: #6c7b62;
-  font-weight: 650;
+  font:
+    10px Consolas,
+    monospace;
+  letter-spacing: 1px;
+  color: var(--muted);
 }
 .workspace-metrics strong {
   display: block;
-  font-size: 36px;
-  line-height: 1.2;
-  letter-spacing: -1.5px;
+  font-size: 30px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
   margin-top: 12px;
 }
 .workspace-metrics small {
   display: block;
-  margin-top: 8px;
-  color: #6b7c69;
   font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
   line-height: 1.5;
 }
-.live-workspace .project-row {
-  padding: 20px;
-  background: #fcfdf9;
-  border-radius: 12px;
-  border-color: #e0e6d9;
-  min-height: 88px;
-  transition:
-    background-color 150ms,
-    border-color 150ms;
+.dapp-workspace .project-row {
+  padding: 16px;
+  min-height: 78px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
-.live-workspace .project-row:hover:not(:disabled) {
-  background: #f0f5e7;
-  border-color: #b9cdb1;
+.dapp-workspace .project-row:hover:not(:disabled) {
+  background: var(--hover);
 }
 .project-row-main {
   display: flex;
+  gap: 13px;
   align-items: center;
-  gap: 14px;
   min-width: 0;
 }
 .project-row-main strong {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 .project-row-icon {
   flex: none;
+  height: 38px;
+  width: 38px;
   display: grid;
   place-items: center;
-  height: 46px;
-  width: 46px;
-  background: #e8efde;
-  border-radius: 12px;
-  font-family: Georgia, serif;
-  font-size: 23px;
-  color: #527143;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--accent);
+  font:
+    16px Consolas,
+    monospace;
 }
-.live-workspace .project-row > span:last-child {
+.dapp-workspace .project-row small {
+  color: var(--muted);
+}
+.dapp-workspace .project-row > span:last-child {
+  color: var(--accent);
+  font-size: 11px;
   flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
 }
-.live-workspace .empty-state {
-  padding-block: 44px;
-  border: 1px dashed #dbe4d2;
-  border-radius: 12px;
-  background: #fafcf6;
+.dapp-workspace .empty-state {
+  background: var(--inset);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 36px 20px;
 }
-.live-workspace .empty-state p {
-  max-width: 450px;
+.dapp-workspace .empty-state h3 {
+  color: var(--ink);
+}
+.dapp-workspace .empty-state p {
+  max-width: 470px;
   margin-inline: auto;
   font-size: 13px;
-  line-height: 1.8;
 }
-.live-workspace .identity-card {
-  background: #f7f9f3;
-  border: 1px solid #e2e8db;
-  border-radius: 12px;
-  padding: 18px;
+.dapp-workspace .identity-card {
+  background: var(--inset);
+  border-color: var(--line);
+  border-radius: 8px;
+  padding: 16px;
 }
-.live-workspace .identity-card strong {
-  font-size: 10px;
+.dapp-workspace .identity-card strong {
+  color: var(--muted);
+  font:
+    10px Consolas,
+    monospace;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  letter-spacing: 1.4px;
-  color: #6e7d62;
 }
-.live-workspace .identity-card code {
-  color: #3d5949;
+.dapp-workspace .identity-card code {
   font-size: 12px;
+  color: var(--ink);
 }
-.live-workspace .identity-card small {
-  font-size: 11px;
-  font-weight: 600;
-  color: #52783d;
+.dapp-workspace .identity-card small {
+  color: var(--accent);
   margin-bottom: 0;
 }
-.live-workspace .editor-milestone {
-  padding: 24px;
-  border-radius: 14px;
-  background: #f8faf4;
-  border-color: #e1e8d9;
+.dapp-workspace .editor-milestone,
+.dapp-workspace .commitment {
+  background: var(--inset);
+  border-color: var(--line);
+  border-radius: 8px;
+  padding: 20px;
 }
-.live-workspace .term-list > div {
-  padding-block: 12px;
+.dapp-workspace .term-list dt,
+.dapp-workspace .rules-list,
+.dapp-workspace .muted,
+.dapp-workspace .status-row small,
+.dapp-workspace .project-row > span:last-child {
+  color: var(--muted);
 }
-.live-workspace .outline-pill {
+.dapp-workspace .term-list > div,
+.dapp-workspace .evidence-row,
+.dapp-workspace .notice-row,
+.dapp-workspace .status-row,
+.dapp-workspace .evidence-form,
+.dapp-workspace .reviewer-panel,
+.dapp-workspace .support-panel {
+  border-color: var(--line);
+}
+.dapp-workspace .outline-pill {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #dbe4d1;
-  border-radius: 30px;
-  padding: 7px 12px;
-  font-size: 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 6px 9px;
+  font:
+    11px Consolas,
+    monospace;
+  color: var(--muted);
+  background: var(--inset);
   line-height: 1.5;
-  background: #f7faf2;
-  color: #527143;
 }
 .escrow-agreement-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 18px;
-  margin-block: 20px;
+  gap: 16px;
+  margin-block: 18px;
 }
 .escrow-agreement-meta details {
-  max-width: 100%;
   font-size: 12px;
-  color: #63785b;
+  max-width: 100%;
+  color: var(--muted);
 }
 .escrow-agreement-meta summary {
   cursor: pointer;
@@ -1546,180 +1640,194 @@ footer {
 }
 .escrow-agreement-meta code {
   margin-top: 8px;
+  color: var(--ink);
 }
-.live-workspace .escrow-next-step {
-  background: #edf4e4;
-  border: 1px solid #dbe7cc;
-  border-left: 4px solid #8cab64;
-  padding: 16px 20px;
-  border-radius: 10px;
-  color: #375331;
+.dapp-workspace .escrow-next-step {
+  background: var(--soft-accent);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  padding: 14px 16px;
   font-size: 13px;
-  line-height: 1.8;
+  color: var(--ink);
 }
 .escrow-acceptance-status {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-block: 8px 18px;
 }
 .acceptance-badge {
-  border-radius: 30px;
-  padding: 8px 13px;
-  background: #f6f0e2;
-  color: #7c652e;
-  border: 1px solid #ebe1c9;
-  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font:
+    11px Consolas,
+    monospace;
 }
 .acceptance-badge.accepted {
-  background: #edf5e6;
-  border-color: #d5e7c6;
-  color: #476638;
+  background: var(--soft-accent);
+  color: var(--accent);
 }
-.live-workspace .escrow-notice {
-  background: #f0f5e8;
-  border-radius: 10px;
-  padding: 13px 16px;
-  border: 1px solid #dce8d0;
-  color: #385b32;
+.dapp-workspace .escrow-notice {
+  background: var(--soft-accent);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 12px 15px;
   font-size: 13px;
 }
-.live-workspace .error-message {
-  border-radius: 10px;
-  padding: 16px 18px;
+.dapp-workspace .notice {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border-color: var(--line);
+}
+.dapp-workspace .error-message {
+  background: var(--error-bg);
+  color: var(--error-ink);
+  border-color: var(--line);
   font-size: 13px;
 }
-.live-workspace .commitment {
-  border-radius: 12px;
-  background: #f9fbf5;
+.dapp-workspace .escrow-panel a {
+  color: var(--accent);
 }
-.live-workspace .scope-text {
-  font-size: 14px;
-  line-height: 1.85;
+.dapp-workspace .scope-text {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.dapp-workspace .setup-panel details {
+  color: var(--muted);
 }
 .signin-emblem {
+  height: 44px;
+  width: 44px;
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  background: #e7efdb;
-  color: #52743f;
-  border-radius: 16px;
-  font-size: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--accent);
+  background: var(--inset);
+  font-size: 24px;
   margin-bottom: 24px;
 }
-.live-workspace .sign-in-panel {
-  max-width: 680px;
-  margin-inline: auto;
-  margin-top: 34px;
-  padding: 36px;
+.dapp-workspace .sign-in-panel {
+  max-width: 600px;
+  margin: 38px auto 0;
+  padding: 32px;
 }
-.live-workspace .sign-in-panel h2 {
-  font-family: Georgia, serif;
-  font-weight: 400;
-  font-size: 32px;
+.dapp-workspace .sign-in-panel h2 {
+  font-size: 25px;
+  font-weight: 550;
 }
-.live-workspace footer {
-  font-size: 11px;
-  color: #73806b;
-  border-top: 1px solid #e0e6d9;
-  margin-top: 36px;
-  padding-top: 24px;
+.dapp-workspace footer {
+  border-top: 1px solid var(--line);
+  margin-top: 32px;
+  padding-top: 22px;
+  color: var(--muted);
+  font:
+    10px Consolas,
+    monospace;
 }
-@media (max-width: 800px) {
-  .workspace-hero {
-    padding: 28px;
+.dapp-workspace section[id] {
+  scroll-margin-top: 24px;
+}
+@media (max-width: 850px) {
+  .dapp-workspace > header {
+    gap: 14px;
     flex-wrap: wrap;
-    gap: 22px;
+    height: auto;
+    min-height: 76px;
+    padding: 16px 24px;
   }
-  .workspace-hero-note {
-    align-items: flex-start;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+  .dapp-workspace .dapp-nav {
+    order: 3;
+    width: 100%;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
   }
-  .workspace-hero h1 {
-    font-size: 36px;
+  .dapp-workspace .wallet-actions {
+    margin-left: auto;
   }
 }
 @media (max-width: 650px) {
-  .live-workspace > header {
-    height: auto;
-    min-height: 80px;
-    gap: 14px;
-    padding: 18px;
+  .dapp-workspace > header {
+    padding: 16px;
   }
-  .live-workspace .brand {
-    font-size: 23px;
-  }
-  .workspace-brand-icon {
-    width: 30px;
-    height: 34px;
-    font-size: 27px;
-    margin-right: 6px;
-  }
-  .live-workspace .wallet-adapter-button {
-    font-size: 11px;
-    padding-inline: 12px;
-    max-width: 100%;
-  }
-  .live-workspace .workspace-content {
-    padding: 22px 16px 40px;
-  }
-  .workspace-hero {
-    padding: 26px 22px;
-    border-radius: 16px;
-  }
-  .workspace-hero h1 {
-    font-size: 34px;
-    letter-spacing: -1px;
-  }
-  .live-workspace .workspace-card {
-    padding: 22px;
-    border-radius: 15px;
-  }
-  .live-workspace h2 {
+  .dapp-workspace .brand {
     font-size: 22px;
+  }
+  .dapp-workspace .wallet-actions {
+    flex-wrap: wrap;
+  }
+  .dapp-workspace .theme-toggle {
+    padding-inline: 8px;
+    font-size: 10px;
+  }
+  .dapp-workspace .wallet-adapter-button {
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+  .dapp-workspace .workspace-content {
+    padding: 24px 16px 36px;
+  }
+  .dapp-workspace .workspace-hero {
+    flex-wrap: wrap;
+    gap: 18px;
+    padding-bottom: 22px;
+  }
+  .workspace-hero-note {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .dapp-workspace h1 {
+    font-size: 28px;
+  }
+  .dapp-workspace .workspace-card {
+    padding: 20px;
   }
   .workspace-metrics {
     grid-template-columns: 1fr;
-    gap: 10px;
   }
   .workspace-metrics > div {
-    padding: 18px 20px;
+    padding: 16px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
     display: grid;
     grid-template-columns: 1fr auto;
+  }
+  .workspace-metrics > div:last-child {
+    border-bottom: 0;
   }
   .workspace-metrics strong {
     grid-column: 2;
     grid-row: 1 / 3;
     margin: 0;
-    font-size: 30px;
     align-self: center;
+    font-size: 28px;
   }
   .workspace-metrics small {
-    margin-top: 7px;
+    margin-top: 6px;
   }
-  .live-workspace .project-row {
+  .dapp-workspace .project-row {
     flex-wrap: wrap;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
   }
-  .live-workspace .project-row > span:last-child {
-    margin-left: 60px;
+  .dapp-workspace .project-row > span:last-child {
+    margin-left: 51px;
   }
-  .live-workspace .escrow-panel button:not(.secondary) {
+  .dapp-workspace .escrow-panel button:not(.secondary) {
     width: 100%;
   }
-  .live-workspace .editor-milestone {
-    padding: 18px;
-  }
-  .live-workspace .sign-in-panel {
-    padding: 26px;
+  .dapp-workspace .editor-milestone {
+    padding: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .live-workspace * {
+  .dapp-workspace * {
     transition: none !important;
   }
 }
