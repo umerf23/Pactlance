@@ -77,7 +77,6 @@ export function Workspace() {
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
@@ -280,7 +279,7 @@ export function Workspace() {
       (filter === "client" ? p.client_wallet : p.freelancer_wallet) === address,
   );
   return (
-    <div className={`live-workspace dapp-workspace dapp-${theme}`}>
+    <div className="live-workspace dapp-workspace">
       <header>
         <Link className="brand" href="/">
           <span className="workspace-brand-icon" aria-hidden="true">
@@ -309,14 +308,6 @@ export function Workspace() {
           <Link href="/">Demo</Link>
         </nav>
         <div className="wallet-actions">
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-          >
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
           {session?.configured ? <WalletButton /> : null}
         </div>
       </header>

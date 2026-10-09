@@ -1137,29 +1137,6 @@ footer {
 
 /* Application surfaces are intentionally flat; emphasis follows the next action. */
 .dapp-workspace {
-  --canvas: #111515;
-  --surface: #191e1e;
-  --inset: #141919;
-  --hover: #222b29;
-  --ink: #edf3f0;
-  --muted: #a0afaa;
-  --line: #303b37;
-  --accent: #b4f4ce;
-  --accent-ink: #132c20;
-  --green: #b4f4ce;
-  --soft-accent: #20382a;
-  --warn-bg: #352c1c;
-  --warn-ink: #ebcc88;
-  --error-bg: #352321;
-  --error-ink: #f1b0a1;
-  background: var(--canvas);
-  color: var(--ink);
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  font-size: 14px;
-  min-height: 100vh;
-  color-scheme: dark;
-}
-.dapp-light {
   --canvas: #f3f5f1;
   --surface: #ffffff;
   --inset: #f6f8f3;
@@ -1175,6 +1152,11 @@ footer {
   --warn-ink: #765d24;
   --error-bg: #fff0eb;
   --error-ink: #953f2a;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
   color-scheme: light;
 }
 .dapp-workspace > header {
@@ -1236,15 +1218,6 @@ footer {
 .dapp-workspace .wallet-actions {
   gap: 10px;
   flex-shrink: 0;
-}
-.dapp-workspace .theme-toggle {
-  padding: 8px 11px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11px;
-  min-height: 40px;
 }
 .dapp-workspace .wallet-adapter-button {
   height: 40px;
@@ -1760,10 +1733,6 @@ footer {
   }
   .dapp-workspace .wallet-actions {
     flex-wrap: wrap;
-  }
-  .dapp-workspace .theme-toggle {
-    padding-inline: 8px;
-    font-size: 10px;
   }
   .dapp-workspace .wallet-adapter-button {
     padding-inline: 10px;
