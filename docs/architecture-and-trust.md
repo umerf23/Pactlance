@@ -14,7 +14,9 @@ Pactlance is a Solana devnet prototype for sequential milestone agreements. TEST
 
 ## Payment and reviewer rules
 
-Only one funded unsettled milestone is active per project. Review expiry can permit release without another client signature, but a transaction must still be submitted. A dispute blocks ordinary release/refund. Primary and backup reviewer authority is governed by the accepted escalation timing. Reviewers can allocate only the funded obligation between the original recipients. If neither an authorized reviewer nor mutual agreement acts, disputed funds may remain locked.
+Only one funded unsettled milestone is active per project. In legacy escrow, review expiry can permit release without another client signature, but a transaction must still be submitted. A dispute blocks ordinary release/refund. Primary and backup reviewer authority is governed by the accepted escalation timing. Reviewers can allocate only the funded obligation between the original recipients. If neither an authorized reviewer nor mutual agreement acts, disputed funds may remain locked.
+
+PAP escrow uses explicit client, mutual or reviewer authorization; its timers never release funds automatically. Evidence and configurable policies remain trusted off-chain decisions. An off-chain dispute must be signed and finalized on chain to lock funds. See [PAP payment trust boundaries](pap-payments.md).
 
 Read-only devnet verification on 9 October 2026 found upgrade authority `Aze8iw5WsDm1YSM78hfT9NscGrR5L4VWxtAVhUNtdRDY` and ProgramData `7YPr3mixggpZVSotDCPaQm3GUpTaGraH4JPdE7sFUP3w`. These are public identities, not keys. Authority was not revoked. The deployment uses an upgradeable program. The upgrade authority is a trust dependency: the deployed code can change. The prototype does not claim immutable code or an independent security audit. The mint authority can create TEST tokens; their balances are for testing, not value backing.
 

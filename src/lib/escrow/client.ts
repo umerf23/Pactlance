@@ -85,6 +85,11 @@ export function addresses(a: BoundAgreement, index = 0) {
 export function encodeProjectTerms(a: BoundAgreement) {
   const t = a.terms;
   if (
+    !!t.protocol !==
+    (t.schemaVersion === 3 && t.paymentProfile === "pap_explicit_v1")
+  )
+    throw new Error("Invalid payment profile.");
+  if (
     !Number.isSafeInteger(t.version) ||
     t.version < 1 ||
     t.milestones.length < 1 ||
@@ -141,7 +146,7 @@ export function encodeProjectTerms(a: BoundAgreement) {
     deploymentKey(t.token.mint).toBuffer(),
     new PublicKey(t.reviewerWallet).toBuffer(),
     new PublicKey(t.backupReviewerWallet).toBuffer(),
-    integer(BigInt(t.reviewHours * 3600), 8, true),
+    integer(t.protocol ? 0n : BigInt(t.reviewHours * 3600), 8, true),
     integer(BigInt(t.backupDelayHours * 3600), 8, true),
     integer(BigInt(schedule.length), 4),
     ...schedule,
@@ -212,7 +217,7 @@ export async function createProjectInstruction(
   const d = addresses(a);
   return ix(
     a,
-    "create_project",
+    a.terms.protocol ? "create_pap_project" : "create_project",
     [
       meta(d.config),
       meta(creator, true, true),
@@ -285,7 +290,7 @@ export async function submitInstruction(
     throw new Error("Empty evidence commitment.");
   return ix(
     a,
-    "submit_delivery",
+    a.terms.protocol ? "submit_pap_delivery" : "submit_delivery",
     [
       meta(new PublicKey(a.terms.freelancerWallet), true),
       meta(d.project),
@@ -298,17 +303,25 @@ export async function approveInstruction(
   a: BoundAgreement,
   index: number,
   recipient: PublicKey,
+  submission?: string,
 ) {
   const d = addresses(a, index);
-  return ix(a, "approve_milestone", [
-    meta(new PublicKey(a.terms.clientWallet), true),
-    meta(d.project, false, true),
-    meta(d.milestone, false, true),
-    meta(new PublicKey(a.terms.token.mint)),
-    meta(d.vault, false, true),
-    meta(recipient, false, true),
-    meta(TOKEN_PROGRAM_ID),
-  ]);
+  if (a.terms.protocol && !submission)
+    throw new Error("Review the PAP delivery commitment before payment.");
+  return ix(
+    a,
+    a.terms.protocol ? "approve_pap_milestone" : "approve_milestone",
+    [
+      meta(new PublicKey(a.terms.clientWallet), true),
+      meta(d.project, false, true),
+      meta(d.milestone, false, true),
+      meta(new PublicKey(a.terms.token.mint)),
+      meta(d.vault, false, true),
+      meta(recipient, false, true),
+      meta(TOKEN_PROGRAM_ID),
+    ],
+    a.terms.protocol ? bytes(submission!, 32) : Buffer.alloc(0),
+  );
 }
 
 export async function verifyMilestoneAccount(
@@ -407,6 +420,10 @@ export async function claimAfterReviewInstruction(
   clientRecipient: PublicKey,
   freelancerRecipient: PublicKey,
 ) {
+  if (a.terms.protocol)
+    throw new Error(
+      "PAP requires explicit payment authorization; timer payouts are disabled.",
+    );
   return ix(
     a,
     "claim_after_review",
@@ -419,6 +436,10 @@ export async function refundNonDeliveryInstruction(
   clientRecipient: PublicKey,
   freelancerRecipient: PublicKey,
 ) {
+  if (a.terms.protocol)
+    throw new Error(
+      "PAP refunds require mutual settlement or dispute resolution.",
+    );
   return ix(
     a,
     "refund_non_delivery",
@@ -574,10 +595,18 @@ export async function reviseProjectInstruction(
       after = next.terms.milestones[i];
     if (canonicalJSON(before) !== canonicalJSON(after))
       throw new Error("Settled milestone terms cannot change.");
+    if (
+      previous.terms.protocol &&
+      canonicalJSON(previous.terms.protocol.milestones[i]) !==
+        canonicalJSON(next.terms.protocol?.milestones[i])
+    )
+      throw new Error("Settled PAP policies cannot change.");
   }
+  if (!!previous.terms.protocol !== !!next.terms.protocol)
+    throw new Error("Escrow profiles cannot change.");
   return ix(
     next,
-    "revise_project",
+    next.terms.protocol ? "revise_pap_project" : "revise_project",
     bothKeys(previous),
     Buffer.concat([bytes(previous.commitment, 32), encodeProjectTerms(next)]),
   );

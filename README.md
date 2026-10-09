@@ -11,6 +11,7 @@ CI verifies the contract in native tests and LiteSVM. Private evidence uploads/l
 
 CI baseline: [`44e487d`](https://github.com/umerf23/Pactlance/actions/runs/37909740880) passed all three jobs, including 18 SBF/LiteSVM cases. See [audit remediation and verification matrix](docs/audit-remediation.md) for the current patch, evidence and limits. This is not an independent security audit or a claim of production readiness.
 
+- [PAP payment adapter, compatibility and operator rollout](docs/pap-payments.md)
 - [Programmable Agreement Protocol: implementation, trust boundaries and rollout](docs/programmable-agreements.md)
 - [Phase 3 setup and verification](docs/phase-3.md)
 - [Phase 4 escrow verification](docs/phase-4.md)
@@ -89,4 +90,4 @@ Prototype tokens are labelled TEST tokens. Real funds, PKR cash-out and card fun
 
 ### Structured programmable agreements
 
-Optional PAP v1 adds reusable work templates, structured deliverables/evidence, bounded revisions, explicit timeout policies, immutable amendments and consent, authenticated workflow transitions and an append-only timeline. Configurable PAP rules execute off-chain and expose payment eligibility only; the existing fixed-policy escrow cannot execute them, so PAP token transfers are blocked pending a compatible adapter. See the [implementation and rollout guide](docs/programmable-agreements.md).
+Optional PAP v1 adds reusable work templates, structured deliverables/evidence, bounded revisions, explicit timeout policies, immutable amendments and consent, authenticated workflow transitions and an append-only timeline. Configurable PAP rules execute off-chain. The explicit PAP payment adapter adds wallet-authorized devnet escrow settlement and finalized PAID/REFUNDED reconciliation. It blocks legacy timer payouts for PAP, preserves legacy account layouts and requires a reviewed contract upgrade/capability plus operator activation before transfers become available. See the [implementation and rollout guide](docs/programmable-agreements.md).

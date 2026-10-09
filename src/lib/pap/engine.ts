@@ -8,6 +8,8 @@ export type MilestoneState =
   | "ACCEPTED"
   | "DISPUTED"
   | "PAYMENT_PENDING"
+  | "PAID"
+  | "REFUNDED"
   | "CANCELLED";
 export interface MilestoneExecution {
   state: MilestoneState;
@@ -20,6 +22,14 @@ export interface MilestoneExecution {
   humanReviewRequired?: boolean;
   deliveries?: PapCommand["deliveries"];
   allocation?: { clientUnits: string; freelancerUnits: string };
+  paymentReference?: {
+    signature: string;
+    slot: number;
+    confirmedAt: string;
+    network: "devnet";
+    clientUnits: string;
+    freelancerUnits: string;
+  };
 }
 export interface Execution {
   version: number;
@@ -78,7 +88,13 @@ export function transition(
     assert(
       !state ||
         state.milestones.every((m) =>
-          ["PENDING", "ACCEPTED", "PAYMENT_PENDING"].includes(m.state),
+          [
+            "PENDING",
+            "ACCEPTED",
+            "PAYMENT_PENDING",
+            "PAID",
+            "REFUNDED",
+          ].includes(m.state),
         ),
       "Resolve ongoing work before activating an amendment",
     );
@@ -383,4 +399,70 @@ export function transition(
       ? "COMPLETED"
       : "ACTIVE";
   return result(state, command.reason);
+}
+
+// Internal reconciliation only. Never accept these facts from a browser command.
+export function reconcilePayment(
+  terms: AgreementTerms,
+  previous: Execution,
+  index: number,
+  proof: NonNullable<MilestoneExecution["paymentReference"]>,
+  cancelled: boolean,
+): Transition {
+  assert(
+    terms.protocol && terms.version === previous.version,
+    "Payment version mismatch",
+  );
+  assert(
+    proof.network === "devnet" &&
+      /^[1-9A-HJ-NP-Za-km-z]{80,90}$/.test(proof.signature) &&
+      Number.isSafeInteger(proof.slot) &&
+      proof.slot > 0,
+    "Finalized payment proof required",
+  );
+  assert(
+    Number.isFinite(Date.parse(proof.confirmedAt)),
+    "Confirmed payment timestamp required",
+  );
+  assert(
+    /^(0|[1-9][0-9]{0,19})$/.test(proof.clientUnits) &&
+      /^(0|[1-9][0-9]{0,19})$/.test(proof.freelancerUnits),
+    "Invalid confirmed allocation",
+  );
+  const state = structuredClone(previous),
+    m = state.milestones[index],
+    amount = terms.milestones[index]?.amountUnits;
+  assert(
+    m &&
+      amount &&
+      BigInt(proof.clientUnits) + BigInt(proof.freelancerUnits) ===
+        BigInt(amount),
+    "Confirmed allocation differs from obligation",
+  );
+  assert(!m.paymentReference, "Payment already reconciled");
+  m.paymentReference = proof;
+  m.allocation = {
+    clientUnits: proof.clientUnits,
+    freelancerUnits: proof.freelancerUnits,
+  };
+  m.acceptedAt ??= proof.confirmedAt;
+  m.state = BigInt(proof.freelancerUnits) > 0n ? "PAID" : "REFUNDED";
+  delete m.humanReviewRequired;
+  if (cancelled) {
+    state.status = "CANCELLED";
+    state.milestones.forEach((item) => {
+      if (!item.acceptedAt) item.state = "CANCELLED";
+    });
+  } else if (state.status !== "CANCELLED") {
+    state.status = state.milestones.some((item) => item.state === "DISPUTED")
+      ? "DISPUTED"
+      : state.milestones.every((item) => !!item.acceptedAt)
+        ? "COMPLETED"
+        : "ACTIVE";
+  }
+  return {
+    state,
+    reason: `Finalized devnet settlement ${proof.signature}; client ${proof.clientUnits}, freelancer ${proof.freelancerUnits} base units`,
+    ruleIds: ["finalized_payment_reconciliation_v1"],
+  };
 }

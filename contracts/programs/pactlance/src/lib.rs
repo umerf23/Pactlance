@@ -19,21 +19,16 @@ pub mod pactlance {
     }
 
     pub fn create_project(ctx: Context<CreateProject>, args: ProjectTerms) -> Result<()> {
-        args.validate(Clock::get()?.unix_timestamp)?;
-        require!(
-            ctx.accounts.creator.key() == args.client
-                || ctx.accounts.creator.key() == args.freelancer,
-            EscrowError::Unauthorized
-        );
-        require_keys_eq!(ctx.accounts.mint.key(), args.mint, EscrowError::WrongMint);
-        require!(ctx.accounts.mint.decimals == 6, EscrowError::WrongMint);
-        let p = &mut ctx.accounts.project;
-        p.terms = args;
-        p.client_accepted = false;
-        p.freelancer_accepted = false;
-        p.next = 0;
-        p.active = false;
-        p.cancelled = false;
+        create_escrow(ctx, args, false)
+    }
+
+    // Separate instruction and zero review_seconds sentinel preserve legacy account layouts.
+    pub fn create_pap_project(ctx: Context<CreateProject>, args: ProjectTerms) -> Result<()> {
+        create_escrow(ctx, args, true)
+    }
+
+    pub fn initialize_pap_capability(ctx: Context<InitializePapCapability>) -> Result<()> {
+        ctx.accounts.capability.version = 1;
         Ok(())
     }
 
@@ -94,6 +89,10 @@ pub mod pactlance {
     }
 
     pub fn submit_delivery(ctx: Context<SubmitDelivery>, commitment: [u8; 32]) -> Result<()> {
+        require!(
+            ctx.accounts.project.terms.review_seconds > 0,
+            EscrowError::WrongState
+        );
         let p = &ctx.accounts.project;
         let m = &mut ctx.accounts.milestone;
         require!(
@@ -119,53 +118,62 @@ pub mod pactlance {
     }
 
     pub fn approve_milestone(ctx: Context<ApproveMilestone>) -> Result<()> {
-        let p = &mut ctx.accounts.project;
-        let m = &mut ctx.accounts.milestone;
         require!(
-            p.active && p.next == m.index && m.status == SUBMITTED,
+            ctx.accounts.project.terms.review_seconds > 0,
             EscrowError::WrongState
         );
-        let project_key = p.key();
-        let index = m.index.to_le_bytes();
-        let bump = [m.bump];
-        let seeds: &[&[u8]] = &[b"milestone", project_key.as_ref(), &index, &bump];
-        // Pay the recorded obligation, not the vault balance: donations cannot inflate payout.
-        token::transfer_checked(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-                TransferChecked {
-                    from: ctx.accounts.vault.to_account_info(),
-                    mint: ctx.accounts.mint.to_account_info(),
-                    to: ctx.accounts.recipient.to_account_info(),
-                    authority: m.to_account_info(),
-                },
-                &[seeds],
-            ),
-            m.amount,
-            ctx.accounts.mint.decimals,
-        )?;
-        m.freelancer_paid = m.amount;
-        m.client_refunded = 0;
+        pay_approved(ctx)
+    }
+
+    pub fn approve_pap_milestone(
+        ctx: Context<ApproveMilestone>,
+        submission: [u8; 32],
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.project.terms.review_seconds == 0,
+            EscrowError::WrongState
+        );
+        require!(
+            submission != [0; 32] && submission == ctx.accounts.milestone.submission,
+            EscrowError::TermsMismatch
+        );
+        pay_approved(ctx)
+    }
+
+    // PAP review/evidence/revision policies are enforced off-chain. A wallet publishes
+    // the exact validated delivery hash; no clock alone can release this escrow.
+    pub fn submit_pap_delivery(ctx: Context<SubmitDelivery>, commitment: [u8; 32]) -> Result<()> {
+        let p = &ctx.accounts.project;
+        let m = &mut ctx.accounts.milestone;
+        require!(p.terms.review_seconds == 0, EscrowError::WrongState);
+        m.current(p)?;
+        require!(
+            matches!(m.status, FUNDED | SUBMITTED),
+            EscrowError::WrongState
+        );
+        require!(
+            Clock::get()?.unix_timestamp <= m.delivery_deadline,
+            EscrowError::Deadline
+        );
+        require!(commitment != [0; 32], EscrowError::TermsMismatch);
         m.invalidate_proposal()?;
-        m.status = SETTLED;
-        p.active = false;
-        p.next = p.next.checked_add(1).ok_or(EscrowError::Overflow)?;
-        emit!(MilestoneSettled {
-            project: p.key(),
-            index: m.index,
-            client_amount: 0,
-            freelancer_amount: m.amount,
-            cancelled: false
-        });
+        m.submission = commitment;
+        m.review_deadline = 0;
+        m.status = SUBMITTED;
         emit!(MilestoneChanged {
             project: p.key(),
             index: m.index,
-            status: SETTLED,
+            status: SUBMITTED,
             amount: m.amount
         });
         Ok(())
     }
+
     pub fn claim_after_review(ctx: Context<SettleMilestone>) -> Result<()> {
+        require!(
+            ctx.accounts.project.terms.review_seconds > 0,
+            EscrowError::WrongState
+        );
         ctx.accounts.milestone.current(&ctx.accounts.project)?;
         let m = &ctx.accounts.milestone;
         require!(m.status == SUBMITTED, EscrowError::WrongState);
@@ -178,6 +186,10 @@ pub mod pactlance {
     }
 
     pub fn refund_non_delivery(ctx: Context<SettleMilestone>) -> Result<()> {
+        require!(
+            ctx.accounts.project.terms.review_seconds > 0,
+            EscrowError::WrongState
+        );
         ctx.accounts.milestone.current(&ctx.accounts.project)?;
         require_keys_eq!(
             ctx.accounts.actor.key(),
@@ -203,7 +215,14 @@ pub mod pactlance {
         m.current(p)?;
         p.participant(ctx.accounts.actor.key())?;
         let now = Clock::get()?.unix_timestamp;
-        m.disputable(now)?;
+        if p.terms.review_seconds == 0 {
+            require!(
+                matches!(m.status, FUNDED | SUBMITTED),
+                EscrowError::WrongState
+            );
+        } else {
+            m.disputable(now)?;
+        }
         require!(commitment != [0; 32], EscrowError::TermsMismatch);
         m.backup_at = now
             .checked_add(p.terms.backup_delay_seconds)
@@ -350,37 +369,126 @@ pub mod pactlance {
         previous_commitment: [u8; 32],
         args: ProjectTerms,
     ) -> Result<()> {
-        let p = &mut ctx.accounts.project;
-        require!(!p.active && !p.cancelled, EscrowError::WrongState);
         require!(
-            previous_commitment == p.terms.commitment && args.version > p.terms.version,
-            EscrowError::TermsMismatch
+            ctx.accounts.project.terms.review_seconds > 0,
+            EscrowError::WrongState
         );
-        require!(
-            args.id == p.terms.id
-                && args.client == p.terms.client
-                && args.freelancer == p.terms.freelancer
-                && args.mint == p.terms.mint,
-            EscrowError::TermsMismatch
-        );
-        let next = p.next as usize;
-        require!(
-            args.milestones.len() > next
-                && args.milestones.get(..next) == p.terms.milestones.get(..next),
-            EscrowError::TermsMismatch
-        );
-        args.validate_from(Clock::get()?.unix_timestamp, next)?;
-        p.terms = args;
-        p.client_accepted = true;
-        p.freelancer_accepted = true;
-        emit!(ProjectChanged {
-            project: p.key(),
-            version: p.terms.version,
-            commitment: p.terms.commitment,
-            cancelled: false
-        });
-        Ok(())
+        revise_escrow(ctx, previous_commitment, args, false)
     }
+
+    pub fn revise_pap_project(
+        ctx: Context<BothParticipants>,
+        previous_commitment: [u8; 32],
+        args: ProjectTerms,
+    ) -> Result<()> {
+        require!(
+            ctx.accounts.project.terms.review_seconds == 0,
+            EscrowError::WrongState
+        );
+        revise_escrow(ctx, previous_commitment, args, true)
+    }
+}
+
+fn create_escrow(ctx: Context<CreateProject>, args: ProjectTerms, pap: bool) -> Result<()> {
+    args.validate_mode(Clock::get()?.unix_timestamp, 0, pap)?;
+    require!(
+        ctx.accounts.creator.key() == args.client || ctx.accounts.creator.key() == args.freelancer,
+        EscrowError::Unauthorized
+    );
+    require_keys_eq!(ctx.accounts.mint.key(), args.mint, EscrowError::WrongMint);
+    require!(ctx.accounts.mint.decimals == 6, EscrowError::WrongMint);
+    let p = &mut ctx.accounts.project;
+    p.terms = args;
+    p.client_accepted = false;
+    p.freelancer_accepted = false;
+    p.next = 0;
+    p.active = false;
+    p.cancelled = false;
+    Ok(())
+}
+fn pay_approved(ctx: Context<ApproveMilestone>) -> Result<()> {
+    let p = &mut ctx.accounts.project;
+    let m = &mut ctx.accounts.milestone;
+    require!(
+        p.active && p.next == m.index && m.status == SUBMITTED,
+        EscrowError::WrongState
+    );
+    let project_key = p.key();
+    let index = m.index.to_le_bytes();
+    let bump = [m.bump];
+    let seeds: &[&[u8]] = &[b"milestone", project_key.as_ref(), &index, &bump];
+    // Pay the recorded obligation, not the vault balance: donations cannot inflate payout.
+    token::transfer_checked(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.vault.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                to: ctx.accounts.recipient.to_account_info(),
+                authority: m.to_account_info(),
+            },
+            &[seeds],
+        ),
+        m.amount,
+        ctx.accounts.mint.decimals,
+    )?;
+    m.freelancer_paid = m.amount;
+    m.client_refunded = 0;
+    m.invalidate_proposal()?;
+    m.status = SETTLED;
+    p.active = false;
+    p.next = p.next.checked_add(1).ok_or(EscrowError::Overflow)?;
+    emit!(MilestoneSettled {
+        project: p.key(),
+        index: m.index,
+        client_amount: 0,
+        freelancer_amount: m.amount,
+        cancelled: false
+    });
+    emit!(MilestoneChanged {
+        project: p.key(),
+        index: m.index,
+        status: SETTLED,
+        amount: m.amount
+    });
+    Ok(())
+}
+fn revise_escrow(
+    ctx: Context<BothParticipants>,
+    previous_commitment: [u8; 32],
+    args: ProjectTerms,
+    pap: bool,
+) -> Result<()> {
+    let p = &mut ctx.accounts.project;
+    require!(!p.active && !p.cancelled, EscrowError::WrongState);
+    require!(
+        previous_commitment == p.terms.commitment && args.version > p.terms.version,
+        EscrowError::TermsMismatch
+    );
+    require!(
+        args.id == p.terms.id
+            && args.client == p.terms.client
+            && args.freelancer == p.terms.freelancer
+            && args.mint == p.terms.mint,
+        EscrowError::TermsMismatch
+    );
+    let next = p.next as usize;
+    require!(
+        args.milestones.len() > next
+            && args.milestones.get(..next) == p.terms.milestones.get(..next),
+        EscrowError::TermsMismatch
+    );
+    args.validate_mode(Clock::get()?.unix_timestamp, next, pap)?;
+    p.terms = args;
+    p.client_accepted = true;
+    p.freelancer_accepted = true;
+    emit!(ProjectChanged {
+        project: p.key(),
+        version: p.terms.version,
+        commitment: p.terms.commitment,
+        cancelled: false
+    });
+    Ok(())
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, PartialEq, Eq)]
@@ -410,6 +518,9 @@ impl ProjectTerms {
         self.validate_from(now, 0)
     }
     pub fn validate_from(&self, now: i64, next: usize) -> Result<()> {
+        self.validate_mode(now, next, false)
+    }
+    fn validate_mode(&self, now: i64, next: usize, pap: bool) -> Result<()> {
         require!(
             self.version > 0 && self.commitment != [0; 32],
             EscrowError::TermsMismatch
@@ -427,9 +538,11 @@ impl ProjectTerms {
             );
         }
         require!(
-            self.review_seconds > 0
-                && self.review_seconds <= 2_592_000
-                && self.backup_delay_seconds > 0
+            (if pap {
+                self.review_seconds == 0
+            } else {
+                self.review_seconds > 0 && self.review_seconds <= 2_592_000
+            }) && self.backup_delay_seconds > 0
                 && self.backup_delay_seconds <= 31_536_000,
             EscrowError::Deadline
         );
@@ -566,6 +679,25 @@ impl Milestone {
 #[derive(InitSpace)]
 pub struct EscrowConfig {
     pub mint: Pubkey,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct PapCapability {
+    pub version: u8,
+}
+
+#[derive(Accounts)]
+pub struct InitializePapCapability<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(constraint=program.programdata_address()? == Some(program_data.key()) @ EscrowError::Unauthorized)]
+    pub program: Program<'info, crate::program::Pactlance>,
+    #[account(constraint=program_data.upgrade_authority_address == Some(authority.key()) @ EscrowError::Unauthorized)]
+    pub program_data: Account<'info, ProgramData>,
+    #[account(init, payer=authority, space=8+PapCapability::INIT_SPACE, seeds=[b"pap-capability"], bump)]
+    pub capability: Account<'info, PapCapability>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -872,5 +1004,15 @@ mod tests {
         let mut p = project();
         p.terms.reviewer = p.terms.client;
         assert!(p.terms.validate(0).is_err());
+    }
+    #[test]
+    fn pap_mode_requires_separate_instruction_and_cannot_downgrade() {
+        let mut p = project();
+        assert!(p.terms.validate_mode(0, 0, true).is_err());
+        p.terms.review_seconds = 0;
+        assert!(p.terms.validate(0).is_err());
+        assert!(p.terms.validate_mode(0, 0, true).is_ok());
+        p.terms.review_seconds = -1;
+        assert!(p.terms.validate_mode(0, 0, true).is_err());
     }
 }
