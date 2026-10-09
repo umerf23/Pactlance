@@ -9,6 +9,9 @@ const fixtures = vi.hoisted(() => ({
   admin: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
+vi.mock("../src/lib/rate-limit", () => ({
+  consumeRateLimit: async () => true,
+}));
 vi.mock("../src/lib/supabase/server", () => ({
   serverSupabase: async () => ({
     auth: {
@@ -117,4 +120,30 @@ it("rejects unsigned access and foreign-origin mutations", async () => {
   );
   expect(mutation.status).toBe(403);
   expect(fixtures.admin).not.toHaveBeenCalled();
+});
+
+it("rejects a correctly hashed file whose bytes contradict its declared MIME type", async () => {
+  const { sha256 } = await import("../src/lib/evidence/schema");
+  const bytes = new TextEncoder().encode("not a PDF");
+  fixtures.visible = {
+    id,
+    status: "pending",
+    kind: "file",
+    uploader_wallet: wallet,
+    storage_path: "project/evidence",
+    byte_size: bytes.length,
+    file_hash: await sha256(bytes),
+    mime_type: "application/pdf",
+  };
+  fixtures.download.mockResolvedValue({ data: new Blob([bytes]), error: null });
+  const r = await POST(
+    new Request(`http://localhost/api/evidence/${id}/complete`, {
+      method: "POST",
+      headers: { origin: "http://localhost" },
+    }),
+    { params: Promise.resolve({ path: [id, "complete"] }) },
+  );
+  expect(r.status).toBe(409);
+  expect((await r.json()).error).toMatch(/declared type/);
+  expect(fixtures.rpc).not.toHaveBeenCalled();
 });

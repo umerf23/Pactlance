@@ -7,7 +7,9 @@ Previously called FreelancePay in the planning documents.
 
 Wallet sign-in, profiles, private projects and immutable multi-milestone agreements are implemented. The Solana escrow contract and client support sequential funding, separate vaults, delivery commitments, approval, review-timeout claims, non-delivery refunds, disputes, exclusive primary/backup reviewer authority, mutual allocations, cancellation and jointly accepted revisions of future work.
 
-The contract is verified locally. Private evidence uploads/links, reviewer evidence screens, in-app reminders, support notes and transaction history are implemented. Phase 7 payment/settlement screens, joint signatures, finalized chain reconciliation, missed-event recovery, a durable claim worker and deployment tooling are implemented. The user has reported successful devnet deployment and browser escrow creation. Full settlement, wallet compatibility and recovery verification remain pending and have been deferred until the end of development. Vercel deployment is paused. Phase 8 usability and submission preparation is in progress.
+CI verifies the contract in native tests and LiteSVM. Private evidence uploads/links, reviewer evidence screens, in-app reminders, support notes and transaction history are implemented. Phase 7 payment/settlement screens, joint signatures, finalized chain reconciliation, missed-event recovery, a durable claim worker and deployment tooling are implemented. The devnet program, TEST mint and upgrade authority were independently read at finalized slot 509137571 on 9 October 2026. The app is hosted at https://pactlance.vercel.app/. Full browser-wallet settlement, wallet compatibility, live recovery and observed user trials remain pending. Phase 8 validation and submission preparation is in progress.
+
+CI baseline: [`44e487d`](https://github.com/umerf23/Pactlance/actions/runs/37909740880) passed all three jobs, including 18 SBF/LiteSVM cases. See [audit remediation and verification matrix](docs/audit-remediation.md) for the current patch, evidence and limits. This is not an independent security audit or a claim of production readiness.
 
 - [Phase 3 setup and verification](docs/phase-3.md)
 - [Phase 4 escrow verification](docs/phase-4.md)
@@ -33,6 +35,10 @@ Open http://localhost:3000. Configure `.env.local` from `.env.example` and follo
 npm run check        # ESLint, TypeScript, application tests, production build
 npm run test:program # Native Rust tests; Rust 1.90.0
 ```
+
+## Apply the audit hardening checkpoint
+
+Apply `supabase/migrations/20261009094002_audit_api_limits.sql` to the matching Supabase project **before** deploying this checkpoint. The shared API limiter fails closed with HTTP 503 when its database function is unavailable. Review the migration and rollout steps in [the audit report](docs/audit-remediation.md). No hosted schema or app changes are automatically applied by local tests.
 
 ## Verify escrow
 

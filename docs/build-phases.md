@@ -1,7 +1,10 @@
 # FreelancePay — Build phases and Phase 1 specification
 
-Prepared 6 October 2026. Source of scope: FreelancePay_Project_Blueprint.md.
-Status: Phase 1 engineering specification drafted. No application, contract, deployment or user validation has been completed.
+Original plan prepared 6 October 2026. Source of scope: FreelancePay_Project_Blueprint.md.
+
+Current status (9 October 2026): Phases 2–7 software is implemented on `main`; Phase 7 live completion and Phase 8 validation gates remain open. CI for merge commit `44e487d6711721fd16a426bb2cb893bd2ae7b47c` passed web, native program and SBF/LiteSVM jobs. The program/TEST mint/upgrade authority were independently read on devnet at finalized slot 509137571. The web app is hosted at https://pactlance.vercel.app/. Complete browser-wallet lifecycle tests and observed user trials have not been demonstrated.
+
+See [audit remediation and evidence](audit-remediation.md) for exact verification and remaining gates. The Phase 1 sections below are the original planning baseline, not statements about today's implementation.
 
 ## Scope commitment
 
@@ -142,7 +145,7 @@ Recruit 8–10 freelancers and 3–5 clients for interviews as in the blueprint.
 
 Ask: describe your last direct-client project; how was payment agreed; what was funded upfront; what caused delay or dispute; how much time went into follow-up; would the client fund each milestone through a wallet; what release/review period is acceptable; whom would both parties trust to review a dispute? Record actual evidence and objections. Do not claim savings, adoption or demand from hypothetical answers.
 
-## Phase 1 status and next handoff
+## Original Phase 1 status and next handoff (6 October 2026)
 
 Completed: scope mapping, phase breakdown, initial journeys, architecture/account design, proposed transition rules, screen inventory and acceptance matrix.
 

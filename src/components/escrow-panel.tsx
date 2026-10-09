@@ -15,6 +15,7 @@ import bs58 from "bs58";
 import * as client from "@/lib/escrow/client";
 import type { BoundAgreement } from "@/lib/escrow/terms";
 import { requireDevnet } from "@/lib/escrow/network";
+import { signDevnetTransaction } from "@/lib/escrow/wallet-signing";
 import {
   captureSignedTransaction,
   recoverTransaction,
@@ -58,7 +59,7 @@ interface Snapshot {
 }
 export function EscrowPanel({ projectId }: { projectId: string }) {
   const { connection } = useConnection(),
-    { publicKey, signTransaction } = useWallet(),
+    { publicKey, signTransaction, wallet: connectedWallet } = useWallet(),
     wallet = publicKey?.toBase58();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [pending, setPending] = useState<PendingTransaction | null>(null),
@@ -143,8 +144,16 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
   async function signed(tx: Transaction, height: number, action: string) {
     if (!signTransaction || !publicKey || !storageKey)
       throw new Error("Connect your wallet.");
+    setNotice(
+      `Review ${action.replaceAll("_", " ")} on Solana devnet in your wallet. Reject a mainnet-labelled prompt.`,
+    );
     const message = tx.serializeMessage(),
-      result = await signTransaction(tx);
+      result = await signDevnetTransaction(
+        connectedWallet?.adapter ?? null,
+        publicKey,
+        connection,
+        tx,
+      );
     if (!message.equals(result.serializeMessage()))
       throw new Error("Wallet changed the reviewed transaction message.");
     result.serialize({ requireAllSignatures: false, verifySignatures: true });
@@ -601,7 +610,8 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
         <>
           <p>
             Solana devnet · TEST tokens have no monetary value. Wallet
-            signatures authorize on-chain actions.
+            signatures authorize on-chain actions. The program is upgradeable;
+            its upgrade authority can change the code.
           </p>
           <p className="escrow-next-step">
             <strong>Next step: </strong>
@@ -706,6 +716,13 @@ export function EscrowPanel({ projectId }: { projectId: string }) {
             </>
           )}
           {s?.cancelled && <p>Remaining work cancelled.</p>}
+          {s?.active && snapshot?.milestones.some((m) => m?.status === 4) && (
+            <p role="status">
+              Disputed funds stay locked until an eligible reviewer resolves the
+              dispute or both participants agree to a settlement. If neither
+              acts, funds can remain locked indefinitely.
+            </p>
+          )}
           {s && s.next >= a.terms.milestones.length && (
             <p>All milestones settled.</p>
           )}

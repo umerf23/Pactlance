@@ -13,3 +13,6 @@ test-ledger/
 
 # Supabase CLI local cache
 supabase/.temp/
+
+# Public validation output can be reviewed before selective publication.
+validation-results/

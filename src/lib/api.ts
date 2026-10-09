@@ -1,6 +1,7 @@
 import "server-only";
 import { serverSupabase } from "./supabase/server";
 import { verifiedSolanaWallet } from "./identity";
+import { consumeRateLimit, type RateScope } from "./rate-limit";
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -9,7 +10,7 @@ export class ApiError extends Error {
     super(message);
   }
 }
-export async function requireWallet() {
+export async function requireWallet(scope: RateScope = "read") {
   const db = await serverSupabase();
   const { data, error } = await db.auth.getUser();
   if (error || !data.user)
@@ -20,6 +21,16 @@ export async function requireWallet() {
       403,
       "Sign in with one verified Solana wallet. Other login methods are not supported.",
     );
+  try {
+    if (!(await consumeRateLimit(data.user.id, scope)))
+      throw new ApiError(429, "Too many requests. Wait one minute and retry.");
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(
+      503,
+      "Request limits are unavailable. Please retry later.",
+    );
+  }
   return { db, userId: data.user.id, wallet };
 }
 export function requireSameOrigin(request: Request) {

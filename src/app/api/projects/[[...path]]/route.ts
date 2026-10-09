@@ -87,7 +87,7 @@ export async function PATCH(request: Request, context: Context) {
 async function mutate(request: Request, context: Context, revision: boolean) {
   try {
     requireSameOrigin(request);
-    const auth = await requireWallet();
+    const auth = await requireWallet("write");
     const path = (await context.params).path ?? [];
     const body = await readJSON(request);
     const admin = adminSupabase();

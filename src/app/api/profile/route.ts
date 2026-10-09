@@ -24,7 +24,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     requireSameOrigin(request);
-    const { db, userId } = await requireWallet();
+    const { db, userId } = await requireWallet("write");
     const parsed = z
       .object({ displayName: z.string().trim().min(1).max(80) })
       .strict()

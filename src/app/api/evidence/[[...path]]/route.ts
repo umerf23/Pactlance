@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { matchesFileType } from "@/lib/evidence/file-type";
 import { z } from "zod";
 import {
   ApiError,
@@ -49,11 +50,17 @@ async function complete(e: EvidenceRecord, actor: string) {
       );
     if (data.size > MAX_FILE_BYTES || data.size !== e.byte_size)
       throw new ApiError(409, "Uploaded file size does not match.");
-    actualHash = await sha256(new Uint8Array(await data.arrayBuffer()));
+    const bytes = new Uint8Array(await data.arrayBuffer());
+    actualHash = await sha256(bytes);
     if (actualHash !== e.file_hash)
       throw new ApiError(
         409,
         "Uploaded file content does not match its recorded hash. Create a new upload.",
+      );
+    if (!matchesFileType(bytes, e.mime_type!))
+      throw new ApiError(
+        409,
+        "File content does not match its declared type. Create a new upload.",
       );
   }
   const manifest = evidenceManifest(e),
@@ -128,7 +135,7 @@ export async function GET(request: Request, context: Context) {
 export async function POST(request: Request, context: Context) {
   try {
     requireSameOrigin(request);
-    const auth = await requireWallet(),
+    const auth = await requireWallet("evidence"),
       path = (await context.params).path ?? [];
     if (path.length === 2 && path[1] === "complete") {
       const e = await visible(path[0], auth);

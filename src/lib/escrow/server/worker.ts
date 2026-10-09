@@ -159,6 +159,10 @@ export async function runProjectWorker(projectId: string) {
         .insert(row)
         .select("signature")
         .maybeSingle();
+  if (write.error && write.error.code !== "23505")
+    throw new Error(
+      "Claim outbox persistence unavailable. No transaction broadcast.",
+    );
   if (write.error || !write.data)
     return { reconciled: true, claims: "another_worker_owns_claim" };
   return {

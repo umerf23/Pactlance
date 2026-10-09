@@ -23,3 +23,5 @@ Recording target: three minutes. Use synthetic project scope and evidence, devne
 - Next steps: complete observed trials, address defects and investigate compliant payment/payout partners before any real-money rollout.
 
 Use no claims of audit, real-money readiness, guaranteed dispute resolution or measured PKR savings without evidence. Remove secrets and private evidence from recordings.
+
+Before recording, complete the [validation runbook](validation-runbook.md) and review the [audit evidence and remaining gates](audit-remediation.md). The hosted app is https://pactlance.vercel.app/. Do not substitute the public sample homepage for a verified live escrow journey.
