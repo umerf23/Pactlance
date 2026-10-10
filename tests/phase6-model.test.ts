@@ -14,6 +14,7 @@ import {
 } from "../src/lib/operations/model";
 const now = Date.parse("2026-10-08T12:00:00Z");
 const m: MilestoneCache = {
+  payment_profile: "legacy",
   project_id: "10000000-0000-4000-8000-000000000001",
   agreement_version: 1,
   milestone_index: 0,
@@ -123,4 +124,24 @@ it("creates only valid fixed-cluster explorer links", () => {
     "?cluster=devnet",
   );
   expect(explorerURL(bs58.encode(new Uint8Array(32)))).toBeNull();
+});
+
+it("never suggests timed claims or automatic refunds for PAP or unknown profiles", async () => {
+  for (const state of ["funded", "submitted"] as const) {
+    const row = {
+      ...m,
+      state,
+      review_deadline: new Date(now - 1).toISOString(),
+      payment_profile: "pap_explicit_v1" as const,
+    };
+    const notice = (await reminders([row], "client", now))[0];
+    expect(notice.message).not.toMatch(
+      /payment claim may be eligible|non-delivery refund may be eligible/i,
+    );
+    expect(
+      (
+        await reminders([{ ...row, payment_profile: "unknown" }], "client", now)
+      )[0].message,
+    ).toContain("unverified");
+  }
 });

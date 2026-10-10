@@ -8,6 +8,7 @@ import {
   requireSameOrigin,
   requireWallet,
 } from "@/lib/api";
+import { operationalHealth } from "@/lib/operations/server/health";
 import { adminSupabase } from "@/lib/supabase/server";
 async function support(scope: "read" | "write" = "read") {
   const a = await requireWallet(scope);
@@ -24,13 +25,14 @@ export async function GET() {
   try {
     await support();
     const admin = adminSupabase();
-    const [m, t, n] = await Promise.all([
+    const [m, t, n, health] = await Promise.all([
       admin
         .from("milestone_cache")
         .select(
           "project_id,milestone_index,chain_address,state,verified_at,finalized_slot",
         )
-        .order("verified_at", { ascending: false })
+        .in("state", ["funded", "submitted", "disputed"])
+        .order("verified_at", { ascending: true })
         .limit(100),
       admin
         .from("transaction_events")
@@ -42,10 +44,16 @@ export async function GET() {
         .select("id,project_id,note,created_at")
         .order("created_at", { ascending: false })
         .limit(100),
+      operationalHealth(admin),
     ]);
     if (m.error || t.error || n.error)
       throw new ApiError(503, "Support metadata is unavailable.");
-    return json({ milestones: m.data, transactions: t.data, notes: n.data });
+    return json({
+      milestones: m.data,
+      transactions: t.data,
+      notes: n.data,
+      health,
+    });
   } catch (e) {
     return failure(e);
   }

@@ -1,6 +1,7 @@
 import bs58 from "bs58";
 import { sha256 } from "../evidence/schema";
 export interface MilestoneCache {
+  payment_profile?: "legacy" | "pap_explicit_v1" | "unknown";
   project_id: string;
   agreement_version: number;
   milestone_index: number;
@@ -79,7 +80,18 @@ export async function reminders(
     let message = "";
     let boundary = "";
     if (stale) message = "Refresh chain status before deciding what to do.";
-    else if (m.state === "funded") {
+    else if (!m.payment_profile || m.payment_profile === "unknown") {
+      message =
+        "Payment profile is unverified. Refresh chain status before acting.";
+    } else if (m.payment_profile === "pap_explicit_v1") {
+      boundary = m.state;
+      message =
+        m.state === "funded"
+          ? "This PAP milestone is funded. Deadline rules may propose a refund or human review; an authorized wallet must execute any allocation."
+          : m.state === "submitted"
+            ? "Delivery is awaiting explicit review. A timer cannot execute PAP payment; acceptance and wallet authorization are required."
+            : "A dispute is open. Ordinary payout and refund are paused pending authorized resolution.";
+    } else if (m.state === "funded") {
       const late = now >= Date.parse(m.delivery_deadline);
       boundary = late ? "expired" : "delivery";
       message = late
@@ -99,7 +111,7 @@ export async function reminders(
     }
     const key = await sha256(
       new TextEncoder().encode(
-        `${wallet}:${m.project_id}:${m.agreement_version}:${m.milestone_index}:${m.state}:${boundary}:${stale}`,
+        `${wallet}:${m.project_id}:${m.agreement_version}:${m.milestone_index}:${m.state}:${m.payment_profile ?? "unknown"}:${boundary}:${stale}`,
       ),
     );
     result.push({

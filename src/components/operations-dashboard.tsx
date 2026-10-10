@@ -11,6 +11,7 @@ import {
   type Notice,
   type TransactionEvent,
 } from "@/lib/operations/model";
+import type { OperationalHealth } from "@/lib/operations/server/health";
 import type { AgreementTerms } from "@/lib/agreements/schema";
 interface Operations {
   milestones: MilestoneCache[];
@@ -22,6 +23,7 @@ interface Operations {
   chainConfigured: boolean;
 }
 interface Support {
+  health: OperationalHealth;
   milestones: Pick<
     MilestoneCache,
     "project_id" | "milestone_index" | "state" | "verified_at" | "chain_address"
@@ -272,6 +274,48 @@ export function OperationsDashboard({
                     Operational metadata only. Support access does not permit
                     evidence downloads or movement of funds.
                   </p>
+                  <div role="status" aria-live="polite">
+                    <p>
+                      Monitoring: {support.health.status} ·{" "}
+                      {new Date(support.health.checkedAt).toLocaleString()}
+                    </p>
+                    {support.health.counts ? (
+                      <dl className="operations-metrics">
+                        {Object.entries(support.health.counts).map(
+                          ([key, value]) => (
+                            <div key={key}>
+                              <dt>
+                                {
+                                  (
+                                    {
+                                      activeMilestones: "Active milestones",
+                                      staleActiveSnapshots: "Stale snapshots",
+                                      openDisputes: "Open disputes",
+                                      pendingClaims: "Pending claims",
+                                      stuckClaims: "Stuck claims",
+                                      failedClaimsLastDay:
+                                        "Failed claims (24h)",
+                                      papPaymentPendingAgreements:
+                                        "PAP payment pending",
+                                    } as Record<string, string>
+                                  )[key]
+                                }
+                              </dt>
+                              <dd>{value}</dd>
+                            </div>
+                          ),
+                        )}
+                      </dl>
+                    ) : (
+                      <p>
+                        Metrics are unavailable. Check the service before
+                        assuming operations are healthy.
+                      </p>
+                    )}
+                  </div>
+                  <button className="secondary" onClick={loadSupport}>
+                    Refresh diagnostics
+                  </button>
                   {support.milestones.map((m) => (
                     <p key={`${m.project_id}:${m.milestone_index}`}>
                       Project {m.project_id} · milestone {m.milestone_index + 1}{" "}

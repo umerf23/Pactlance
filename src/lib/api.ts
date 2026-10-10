@@ -1,4 +1,5 @@
 import "server-only";
+import { operationalEvent } from "./operations/telemetry";
 import { serverSupabase } from "./supabase/server";
 import { verifiedSolanaWallet } from "./identity";
 import { consumeRateLimit, type RateScope } from "./rate-limit";
@@ -26,6 +27,7 @@ export async function requireWallet(scope: RateScope = "read") {
       throw new ApiError(429, "Too many requests. Wait one minute and retry.");
   } catch (error) {
     if (error instanceof ApiError) throw error;
+    operationalEvent("quota_unavailable", { status: 503 });
     throw new ApiError(
       503,
       "Request limits are unavailable. Please retry later.",
@@ -73,20 +75,24 @@ export function json(data: unknown, status = 200) {
   });
 }
 export function failure(error: unknown) {
-  if (error instanceof ApiError)
-    return json({ error: error.message }, error.status);
+  if (error instanceof ApiError) {
+    const requestId =
+      error.status >= 500
+        ? operationalEvent("api_unavailable", { status: error.status })
+        : undefined;
+    return json(
+      { error: error.message, ...(requestId ? { requestId } : {}) },
+      error.status,
+    );
+  }
   if (error instanceof Error && error.message === "BACKEND_NOT_CONFIGURED")
     return json(
       { error: "Shared workspace setup is pending. No data was saved." },
       503,
     );
-  console.error(
-    "Pactlance request failed",
-    error instanceof Error
-      ? process.env.NODE_ENV === "development"
-        ? error.message
-        : error.name
-      : "unknown",
+  const requestId = operationalEvent("api_failure", { status: 500 });
+  return json(
+    { error: "Unable to complete this request. Please retry.", requestId },
+    500,
   );
-  return json({ error: "Unable to complete this request. Please retry." }, 500);
 }

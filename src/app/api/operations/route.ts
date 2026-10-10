@@ -45,7 +45,34 @@ export async function GET(request: Request) {
     ]);
     if (m.error || t.error || r.error || s.error)
       throw new ApiError(503, "Operations setup is incomplete or unavailable.");
-    const milestones = (m.data ?? []) as MilestoneCache[];
+    const rows = (m.data ?? []) as MilestoneCache[];
+    const profiles = rows.length
+      ? await auth.db
+          .from("escrow_bindings")
+          .select("project_id,agreement_version,terms")
+          .in("project_id", [...new Set(rows.map((row) => row.project_id))])
+      : { data: [], error: null };
+    if (profiles.error)
+      throw new ApiError(
+        503,
+        "Payment profiles are unavailable. Refresh before acting.",
+      );
+    const bound = new Map(
+      (profiles.data ?? []).map((b) => [
+        `${b.project_id}:${b.agreement_version}`,
+        b.terms,
+      ]),
+    );
+    const milestones = rows.map((row): MilestoneCache => {
+      const terms = bound.get(`${row.project_id}:${row.agreement_version}`);
+      const payment_profile =
+        terms?.schemaVersion === 3 && terms.paymentProfile === "pap_explicit_v1"
+          ? "pap_explicit_v1"
+          : terms?.schemaVersion === 2 && !terms.protocol
+            ? "legacy"
+            : "unknown";
+      return { ...row, payment_profile };
+    });
     const dismissed = new Set((r.data ?? []).map((v) => v.notice_key));
     const notices = (await reminders(milestones, auth.wallet)).filter(
       (v) => !dismissed.has(v.key),

@@ -347,3 +347,71 @@ it("retains exclusive reviewer access only until a decided allocation is paid", 
     0,
   );
 });
+
+it("restores a real archive without weakening private reads or immutable terms", async () => {
+  await admin();
+  await db.query(
+    "insert into public.claim_outbox(project_id,milestone_index,signature,raw,blockhash,last_valid_block_height,status) values($1,0,'synthetic-signature','synthetic-signed-bytes','synthetic-blockhash',100,'pending')",
+    [project],
+  );
+  await db.query(
+    "insert into public.reconciliation_cursors(project_id,last_signature) values($1,'synthetic-cursor')",
+    [project],
+  );
+  const tables = [
+    "agreements",
+    "agreement_acceptances",
+    "agreement_execution",
+    "agreement_transitions",
+    "evidence",
+    "claim_outbox",
+    "reconciliation_cursors",
+  ];
+  const before = await Promise.all(
+    tables.map((table) =>
+      db.query(`select * from public.${table} order by project_id`),
+    ),
+  );
+  const archive = await db.dumpDataDir();
+  const restored = new PGlite({ loadDataDir: archive });
+  try {
+    await restored.exec("reset role;set role service_role");
+    for (let i = 0; i < tables.length; i++)
+      expect(
+        (
+          await restored.query(
+            `select * from public.${tables[i]} order by project_id`,
+          )
+        ).rows,
+      ).toEqual(before[i].rows);
+    await restored.exec("reset role;set role authenticated");
+    await restored.query(
+      "select set_config('request.jwt.claim.sub',$1,false)",
+      [users[4]],
+    );
+    expect(
+      (await restored.query("select * from public.agreement_execution")).rows,
+    ).toHaveLength(0);
+    expect(
+      (await restored.query("select * from public.evidence")).rows,
+    ).toHaveLength(0);
+    await expect(
+      restored.query("select * from public.claim_outbox"),
+    ).rejects.toThrow(/permission denied/);
+    await restored.query(
+      "select set_config('request.jwt.claim.sub',$1,false)",
+      [users[0]],
+    );
+    expect(
+      (await restored.query("select * from public.agreement_execution")).rows,
+    ).toHaveLength(1);
+    await restored.exec("reset role;set role service_role");
+    await expect(
+      restored.query("delete from public.agreements where project_id=$1", [
+        project,
+      ]),
+    ).rejects.toThrow(/append-only/);
+  } finally {
+    await restored.close();
+  }
+}, 30000);
