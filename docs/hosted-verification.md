@@ -41,6 +41,10 @@ An actual local HTTP JSON-RPC fixture, using the real web3 Connection, proves th
 
 ## Hosted application observations and blocker
 
+A later read-only devnet preflight on the published candidate verified the configured program/mint, finalized genesis, upgrade authority, six decimals and PAP capability version 1. No transaction was sent. Identity/capability alone does not qualify G2: the tested compiled binary must also match.
+
+CI now uploads the program binary only after the runtime verification succeeds, alongside its source/toolchain/hash report. Download the binary and run `npm run devnet:preflight -- --pap --artifact PATH_TO_DOWNLOADED_PACTLANCE_SO --report validation-results/devnet-preflight.json`. Review the runtime report's actual source and artifact hash first: PR merge refs differ from branch head commits. Do not combine their release records, or treat binary equality as an independent audit.
+
 The public app at https://pactlance.vercel.app reported baseline revision `f803d6960a2fc46c1aaa1afea79581292b418bd0`, devnet configured and real-money payments disabled. Protected projects/support/PAP reads returned 401. Responses had no-store, nosniff, DENY framing, no-referrer and restrictive framing/base/object CSP headers.
 
 `/api/monitor` and `/api/worker` returned **503, Operator access is not configured**. They fail closed, but operational monitoring/worker authentication is unavailable. The deployment checker now requires unauthenticated **401** responses from configured operator endpoints; it rejects 503/unprotected responses rather than reporting readiness.
