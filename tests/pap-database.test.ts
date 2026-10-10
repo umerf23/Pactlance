@@ -93,12 +93,32 @@ beforeAll(async () => {
     "20261008060103_phase7_worker_hardening.sql",
     "20261009111636_programmable_agreements.sql",
     "20261009174010_pap_payment_reviewer_access.sql",
+    "20261010104341_access_policy_performance.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await admin();
   await save(1);
 }, 30000);
 afterAll(() => db.close());
+it("retains one authorized SELECT policy and indexes all previously uncovered foreign keys", async () => {
+  const policies = await db.query<{ tablename: string; count: number }>(
+    "select tablename,count(*)::integer as count from pg_policies where cmd='SELECT' and tablename in ('agreements','evidence','objects') group by tablename order by tablename",
+  );
+  expect(policies.rows).toEqual([
+    { tablename: "agreements", count: 1 },
+    { tablename: "evidence", count: 1 },
+    { tablename: "objects", count: 1 },
+  ]);
+  const indexes = await db.query(
+    "select indexname from pg_indexes where indexname in ('agreement_acceptances_member','agreement_execution_version','agreement_transitions_version','milestone_cache_version','support_notes_author','support_notes_project')",
+  );
+  expect(indexes.rows).toHaveLength(6);
+  // A plan must cache the current user once, rather than per visible row.
+  await user(0);
+  const plan = await db.query("explain select * from public.profiles");
+  expect(JSON.stringify(plan.rows)).toContain("InitPlan");
+  await admin();
+});
 it("activation atomically rejects missing consent", async () => {
   await expect(commit(0)).rejects.toThrow(/Both signatures/);
   expect(

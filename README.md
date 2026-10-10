@@ -215,8 +215,11 @@ Use your own project configuration. A cloned repository contains no deployer, mi
 | 6     | [20261009094002_audit_api_limits.sql](supabase/migrations/20261009094002_audit_api_limits.sql)                       |
 | 7     | [20261009111636_programmable_agreements.sql](supabase/migrations/20261009111636_programmable_agreements.sql)         |
 | 8     | [20261009174010_pap_payment_reviewer_access.sql](supabase/migrations/20261009174010_pap_payment_reviewer_access.sql) |
+| 9     | [20261010104341_access_policy_performance.sql](supabase/migrations/20261010104341_access_policy_performance.sql)     |
 
 The existing project's hosted history has different timestamps for the last three migrations: `20261009105724_audit_api_limits`, `20261009151959_programmable_agreements`, and `20261009180141_pap_payment_reviewer_access`. Different timestamps do not mean those changes are missing. Verify definitions and history before applying anything.
+
+Migration 9 is a reviewed access-policy/index optimization and remains unapplied to the hosted project pending approval. See [hosted verification](docs/hosted-verification.md) for the rollback-only probe, observed operator-configuration blocker, and rollout requirements.
 
 ### 3. Run the application
 

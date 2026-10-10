@@ -1,5 +1,5 @@
 import "server-only";
-import { Connection } from "@solana/web3.js";
+import { devnetConnection } from "../connection";
 import bs58 from "bs58";
 import { settlementEvents } from "../events";
 import { adminSupabase } from "@/lib/supabase/server";
@@ -7,11 +7,10 @@ import { readEscrow, jsonSafe } from "../snapshot";
 import { addresses, discriminator } from "../client";
 import type { AgreementRecord } from "@/lib/agreements/schema";
 export function serverConnection() {
-  return new Connection(
+  return devnetConnection(
     process.env.SOLANA_RPC_URL ||
       process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
       "https://api.devnet.solana.com",
-    "finalized",
   );
 }
 export async function reconcileProject(id: string) {

@@ -101,7 +101,7 @@ A read-only inspection on 2026-10-10 confirmed all 18 public/private application
 
 The earlier security review found an intentional no-policy notice on private.api_limits (default browser denial) and disabled leaked-password protection. Review password protection if password authentication is exposed; do not add permissive policies to silence the private-table notice. [Password security remediation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 
-The advisory backlog includes uncovered foreign keys, per-row Auth function evaluations and multiple permissive policies. It is not resolved by this patch; optimize without weakening access semantics. [Index guidance](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys), [RLS evaluation guidance](https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan).
+The advisory backlog includes uncovered foreign keys, per-row Auth function evaluations and multiple permissive policies. The later [hosted verification work](hosted-verification.md) prepares and tests migration 9 for these findings; hosted application is blocked pending explicit approval. [Index guidance](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys), [RLS evaluation guidance](https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan).
 
 Metadata inspection is not an authenticated G3/G9 privacy pass. Participant, outsider, support, reviewer, session revocation and private signed-download paths still need target-environment testing.
 

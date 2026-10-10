@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { publicOrigin } from "./lib/release-policy.mjs";
 
 // Operator-only, read-only checks. Never publish credential values or raw errors.
 const checks = [];
@@ -21,9 +22,7 @@ async function check(name, run) {
   }
 }
 await check("application_configuration", async () => {
-  const origin = new URL(process.env.APP_URL);
-  if (origin.username || origin.password || origin.search || origin.hash)
-    throw new Error("Use a plain app URL.");
+  const origin = new URL(publicOrigin.parse(process.env.APP_URL));
   const response = await fetch(new URL("/api/health", origin), {
     signal: AbortSignal.timeout(15000),
   });
@@ -38,6 +37,23 @@ await check("application_configuration", async () => {
   revision = /^[a-f0-9]{40}$/.test(health.revision ?? "")
     ? health.revision
     : null;
+});
+await check("operator_endpoints_configured_and_protected", async () => {
+  const origin = publicOrigin.parse(process.env.APP_URL);
+  for (const path of ["/api/monitor", "/api/worker"]) {
+    // No bearer is sent, so this cannot start an authorized worker cycle.
+    // 503 means missing/invalid CRON_SECRET, not healthy operator protection.
+    const response = await fetch(new URL(path, origin), {
+      signal: AbortSignal.timeout(15000),
+    });
+    const body = await response.json();
+    if (
+      response.status !== 401 ||
+      typeof body.error !== "string" ||
+      !response.headers.get("cache-control")?.includes("no-store")
+    )
+      throw new Error("Operator authentication unavailable.");
+  }
 });
 await check("unsigned_projects_rejected", async () => {
   const response = await fetch(new URL("/api/projects", process.env.APP_URL), {
