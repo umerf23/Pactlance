@@ -1,4 +1,14 @@
 import bs58 from "bs58";
+import { spawnSync, execFileSync } from "node:child_process";
+import {
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { it, expect } from "vitest";
 import {
   assessRelease,
@@ -61,6 +71,13 @@ function fixture() {
     source: { ...source },
     completedAt: date,
     status: "passed",
+    actualTools: {
+      node: "v24.19.0",
+      npm: "11.9.0",
+      rust: "rustc 1.90.0 (test fixture)",
+      sbf: "solana-cargo-build-sbf 2.3.0",
+      sbfRust: "rustc 1.89.0-dev (test fixture)",
+    },
     checks: Array(suite === "web" ? 1 : 2).fill({
       status: "passed",
       exitCode: 0,
@@ -308,4 +325,150 @@ it("uses Cargo's SBF compiler probes and rejects native, old or wrong-path compi
     {},
   ])
     expect(sbfCompilerEvidence(fixture).pinned).toBe(false);
+});
+
+it("blocks missing or mismatched tool evidence and duplicate suite reports", () => {
+  for (const mutate of [
+    (f: ReturnType<typeof fixture>) => {
+      f.automated[0].actualTools.node = "v22.0.0";
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.automated[0].actualTools.npm = "11.8.0";
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.automated[1].actualTools.rust = "rustc 1.89.0 (fixture)";
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.automated[2].actualTools.sbf = "solana-cargo-build-sbf 2.2.0";
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.automated[2].actualTools.sbfRust = "rustc 1.84.1-dev (fixture)";
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.automated[0].actualTools = {} as (typeof f.automated)[0]["actualTools"];
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.automated.push(f.automated[0]);
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.record.source.node = "v22.0.0";
+    },
+  ]) {
+    const f = fixture();
+    mutate(f);
+    expect(
+      assessRelease(f.record, f.automated, f.artifacts, now).blocked,
+    ).toContain("G1");
+  }
+});
+
+it("blocks conflicting, duplicate, unknown and blank manual observations", () => {
+  for (const variant of [
+    "conflict",
+    "duplicate",
+    "unknown",
+    "blank",
+    "missing",
+  ]) {
+    const f = fixture();
+    const observations = requiredObservations.G3.map((id) => ({
+      id,
+      status: "PASS",
+      reference: "reviewed log",
+    }));
+    if (variant === "conflict")
+      observations.push({ ...observations[0], status: "FAIL" });
+    if (variant === "duplicate") observations[1] = { ...observations[0] };
+    if (variant === "unknown")
+      observations.push({
+        id: "unexpected",
+        status: "FAIL",
+        reference: "failed check",
+      });
+    if (variant === "blank") observations[0].reference = "   ";
+    if (variant === "missing") observations.pop();
+    attach(f, "G3", {
+      kind: "reviewed-release-observations",
+      gate: "G3",
+      observations,
+    });
+    expect(
+      assessRelease(f.record, f.automated, f.artifacts, now).blocked,
+    ).toContain("G3");
+  }
+});
+
+it("replaces stale approval on rejected assessment and evidence attachment", () => {
+  const dir = mkdtempSync(join(tmpdir(), "release-cli-"));
+  const script = resolve("scripts/release-record.mjs");
+  const decisionPath = join(dir, "validation-results/release-decision.json");
+  const recordPath = join(dir, "validation-results/release-record.json");
+  const approval = () =>
+    writeFileSync(
+      decisionPath,
+      JSON.stringify({ decision: "READY_FOR_CONTROLLED_BROWSER_VALIDATION" }),
+    );
+  const run = (args: string[]) =>
+    spawnSync(process.execPath, [script, ...args], {
+      cwd: dir,
+      encoding: "utf8",
+    });
+  try {
+    mkdirSync(join(dir, "validation-results"));
+    // Invalid JSON must replace a prior approval even before source is read.
+    approval();
+    writeFileSync(recordPath, "broken JSON");
+    expect(run(["assess"]).status).toBe(1);
+    expect(JSON.parse(readFileSync(decisionPath, "utf8"))).toMatchObject({
+      decision: "NO_GO",
+      realMoneyPaymentsEnabled: false,
+    });
+
+    const f = fixture();
+    writeFileSync(recordPath, JSON.stringify(f.record));
+    writeFileSync(join(dir, "package-lock.json"), "{}");
+    execFileSync("git", ["init", "--quiet"], { cwd: dir });
+    execFileSync("git", ["add", "package-lock.json"], { cwd: dir });
+    execFileSync(
+      "git",
+      [
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "--quiet",
+        "-m",
+        "fixture",
+      ],
+      { cwd: dir },
+    );
+    approval();
+    expect(run(["assess"]).status).toBe(1);
+    expect(JSON.parse(readFileSync(decisionPath, "utf8")).decision).toBe(
+      "NO_GO",
+    );
+
+    approval();
+    writeFileSync(
+      join(dir, "validation-results/G3.json"),
+      JSON.stringify({ status: "not_run" }),
+    );
+    expect(
+      run([
+        "attach",
+        "--gate",
+        "G3",
+        "--evidence",
+        "validation-results/G3.json",
+        "--reviewer",
+        "operator",
+      ]).status,
+    ).toBe(0);
+    expect(JSON.parse(readFileSync(decisionPath, "utf8")).decision).toBe(
+      "NO_GO",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

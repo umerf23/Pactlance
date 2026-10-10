@@ -15,6 +15,27 @@ import {
 } from "./lib/release-policy.mjs";
 import { releaseContext, sha256 } from "./lib/release-context.mjs";
 const path = "validation-results/release-record.json";
+const decisionPath = "validation-results/release-decision.json";
+function invalidateDecision(reason) {
+  writeFileSync(
+    decisionPath,
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        kind: "release-decision",
+        checkedAt: new Date().toISOString(),
+        decision: "NO_GO",
+        status: "blocked",
+        blocked: gateIds,
+        realMoneyPaymentsEnabled: false,
+        reason,
+      },
+      null,
+      2,
+    ) + "\n",
+    { mode: 0o600 },
+  );
+}
 function load(file) {
   if (!existsSync(file)) return null;
   const root = realpathSync("validation-results") + sep;
@@ -124,11 +145,14 @@ try {
       evidence: [{ path: file, sha256: evidence.digest }],
     };
     releaseRecord.parse(record);
+    invalidateDecision("Evidence changed; reassessment required.");
     writeFileSync(path, JSON.stringify(record, null, 2) + "\n");
     console.log(
       `Attached reviewed evidence for ${id}. Run release:assess; attachment alone does not pass a gate.`,
     );
   } else if (process.argv[2] === "assess") {
+    // Replace prior approval before any read/validation can fail.
+    invalidateDecision("Assessment incomplete or rejected.");
     const record = releaseRecord.parse(load(path)?.report),
       source = releaseContext();
     if (
@@ -146,10 +170,7 @@ try {
       for (const ref of g.evidence)
         artifacts[ref.path] = load(resolve(ref.path));
     const decision = assessRelease(record, automated, artifacts);
-    writeFileSync(
-      "validation-results/release-decision.json",
-      JSON.stringify(decision, null, 2) + "\n",
-    );
+    writeFileSync(decisionPath, JSON.stringify(decision, null, 2) + "\n");
     console.log(
       `${decision.decision}: blocked gates ${decision.blocked.join(", ") || "none"}. Mainnet remains unsupported.`,
     );
