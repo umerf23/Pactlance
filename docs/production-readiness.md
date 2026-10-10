@@ -87,6 +87,10 @@ npm run release:assess
 
 Attachment computes a digest; it alone cannot pass a gate. Assessment verifies source, target, freshness, digest and required observations. Changes to an attached file require another review/attachment.
 
+Each automated suite must have exactly one report with the recorded pinned Node/npm and relevant Rust/SBF versions. Manual observation reports must contain each required ID exactly once, all with PASS and a nonblank evidence reference. Duplicate, conflicting, missing or unexpected observations block the gate; a passing entry cannot hide a failed entry.
+
+Starting an assessment replaces any previous decision with NO_GO before reading evidence. A rejected assessment therefore cannot leave an earlier approval available. Attaching replacement evidence also invalidates the prior decision until reassessment succeeds. Keep archived decisions separately; use only the current release-decision.json for the current candidate.
+
 For manual templates, fill each observation from an actual run with PASS, FAIL, BLOCKED or NOT_RUN and a redacted screenshot/log/transaction/balance reference. Mark the report `passed` only after every required observation passed; record its actual checkedAt. Preserve app/source/program/mint identity. Reviewer names are timestamped operator records, not cryptographic signatures. This local tool does not independently authenticate reviewer identity or observation truth and does not change deployment flags.
 
 `validation-results/release-decision.json` contains all gates. NO_GO exits nonzero. Automated test fixtures are synthetic and must never be attached as hosted/browser proof.

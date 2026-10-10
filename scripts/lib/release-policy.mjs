@@ -143,16 +143,29 @@ export function assessRelease(
   const r = releaseRecord.parse(recordInput);
   const sourceMatches = (s) =>
     s?.clean === true &&
+    s.node === "v24.19.0" &&
+    s.node === r.source.node &&
     s.commit === r.source.commit &&
     s.tree === r.source.tree &&
     s.lockfileSha256 === r.source.lockfileSha256;
   const automatedPass = ["web", "native", "runtime"].every((suite) => {
-    const a = automated.find((v) => v.suite === suite);
+    const reports = automated.filter((v) => v?.suite === suite);
+    const a = reports[0];
     return (
+      reports.length === 1 &&
       a?.kind === "local-release-checks" &&
       a.schemaVersion === 1 &&
       sourceMatches(a.source) &&
       a.status === "passed" &&
+      a.actualTools?.node === "v24.19.0" &&
+      a.actualTools?.npm === "11.9.0" &&
+      (suite !== "native" ||
+        /^rustc 1\.90\.0 /.test(a.actualTools?.rust ?? "")) &&
+      (suite !== "runtime" ||
+        (a.actualTools?.sbf === "solana-cargo-build-sbf 2.3.0" &&
+          /^rustc 1\.89\.0(?:-dev)?[ \n]/.test(
+            a.actualTools?.sbfRust ?? "",
+          ))) &&
       fresh(a.completedAt, now) &&
       a.checks?.length === (suite === "web" ? 1 : 2) &&
       a.checks.every((v) => v.status === "passed" && v.exitCode === 0) &&
@@ -231,18 +244,20 @@ export function assessRelease(
             e.transactions.length &&
           e.balancesVerified === true
         );
+      const required = requiredObservations[id];
       return (
         e.kind === "reviewed-release-observations" &&
         e.gate === id &&
         Array.isArray(e.observations) &&
-        requiredObservations[id]?.every((key) =>
-          e.observations.some(
-            (v) =>
-              v.id === key &&
-              v.status === "PASS" &&
-              typeof v.reference === "string" &&
-              v.reference.length > 0,
-          ),
+        !!required &&
+        e.observations.length === required.length &&
+        new Set(e.observations.map((v) => v?.id)).size === required.length &&
+        e.observations.every(
+          (v) =>
+            required.includes(v?.id) &&
+            v.status === "PASS" &&
+            typeof v.reference === "string" &&
+            v.reference.trim().length > 0,
         )
       );
     });
