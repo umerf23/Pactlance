@@ -1,108 +1,160 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getMint } from "@solana/spl-token";
 import { createHash } from "node:crypto";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-const c = new Connection(
-  process.env.SOLANA_RPC_URL ||
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-    "https://api.devnet.solana.com",
-  "finalized",
-);
+import {
+  releaseContext,
+  compareArtifact,
+  sha256,
+} from "./lib/release-context.mjs";
+const arg = (name) => process.argv[process.argv.indexOf(name) + 1];
+const file = process.argv.includes("--report")
+  ? arg("--report")
+  : "validation-results/devnet-preflight.json";
+const report = {
+  schemaVersion: 2,
+  kind: "read-only-devnet-preflight",
+  status: "in_progress",
+  source: releaseContext(),
+  checkedAt: new Date().toISOString(),
+  network: "devnet",
+  limitation:
+    "Read-only deployment observation. Does not verify browser journeys, hosted privacy, or independently reproduce source.",
+};
+const save = () => {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, JSON.stringify(report, null, 2) + "\n");
+};
+save();
+const tag = (value) =>
+  createHash("sha256").update(value).digest().subarray(0, 8);
 try {
-  if (
-    (await c.getGenesisHash()) !==
-    "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"
-  )
-    throw new Error("Solana devnet is required.");
-  console.log("Verified Solana devnet.");
-  const p = process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID,
+  const manifest = JSON.parse(
+      readFileSync("contracts/devnet-deployment.json", "utf8"),
+    ),
+    p = process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID,
     m = process.env.NEXT_PUBLIC_TEST_TOKEN_MINT;
-  if (!p || !m) {
-    console.log("Program/mint not configured. Deployment remains pending.");
-    process.exitCode = 1;
-  } else {
-    const program = new PublicKey(p),
-      mint = new PublicKey(m),
-      [config] = PublicKey.findProgramAddressSync(
-        [Buffer.from("config")],
-        program,
-      ),
-      [pa, ca] = await c.getMultipleAccountsInfo(
-        [program, config],
-        "finalized",
-      ),
-      mi = await getMint(c, mint, "finalized"),
-      tag = createHash("sha256")
-        .update("account:EscrowConfig")
-        .digest()
-        .subarray(0, 8);
-    if (
-      !pa?.executable ||
-      !ca?.owner.equals(program) ||
-      ca.data.length !== 40 ||
-      !ca.data.subarray(0, 8).equals(tag) ||
-      !ca.data.subarray(8, 40).equals(mint.toBuffer()) ||
-      !mi.isInitialized ||
-      mi.decimals !== 6
-    )
-      throw new Error("Deployment/config/TEST mint verification failed.");
-    const loader = new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111");
-    if (
-      !pa.owner.equals(loader) ||
-      pa.data.length !== 36 ||
-      pa.data.readUInt32LE(0) !== 2
-    )
-      throw new Error("Unexpected program loader or layout.");
-    const programData = new PublicKey(pa.data.subarray(4, 36));
-    const pd = await c.getAccountInfo(programData, "finalized");
-    if (
-      !pd?.owner.equals(loader) ||
-      pd.data.length < 13 ||
-      pd.data.readUInt32LE(0) !== 3
-    )
-      throw new Error("Invalid ProgramData.");
-    if (
-      ![0, 1].includes(pd.data[12]) ||
-      (pd.data[12] === 1 && pd.data.length < 45)
-    )
-      throw new Error("Invalid upgrade authority layout.");
-    const authority =
-      pd.data[12] === 1
-        ? new PublicKey(pd.data.subarray(13, 45)).toBase58()
-        : null;
-    const report = {
-      schemaVersion: 1,
-      kind: "read-only-devnet-preflight",
-      checkedAt: new Date().toISOString(),
-      genesis: await c.getGenesisHash(),
-      finalizedSlot: await c.getSlot("finalized"),
-      program: p,
-      programData: programData.toBase58(),
-      upgradeAuthority: authority,
-      lastUpgradeSlot: pd.data.readBigUInt64LE(4).toString(),
-      executableCodeSha256: createHash("sha256")
-        .update(pd.data.subarray(45))
-        .digest("hex"),
-      mint: m,
-      decimals: mi.decimals,
-      mintAuthority: mi.mintAuthority?.toBase58() ?? null,
-      freezeAuthority: mi.freezeAuthority?.toBase58() ?? null,
-      limitation:
-        "Read-only identities and configuration verified; no lifecycle, browser wallet or source-to-deployed-binary verification.",
-    };
-    console.log(JSON.stringify(report, null, 2));
-    const at = process.argv.indexOf("--report");
-    if (at >= 0) {
-      const file = process.argv[at + 1];
-      if (!file) throw new Error("Missing report path.");
-      mkdirSync(dirname(file), { recursive: true });
-      writeFileSync(file, JSON.stringify(report, null, 2) + "\n");
-    }
-  }
+  if (
+    !p ||
+    !m ||
+    manifest.network !== "devnet" ||
+    p !== manifest.program ||
+    m !== manifest.mint
+  )
+    throw new Error("Identity mismatch.");
+  const c = new Connection(
+    process.env.SOLANA_RPC_URL ||
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+      "https://api.devnet.solana.com",
+    {
+      commitment: "finalized",
+      disableRetryOnRateLimit: true,
+      fetch: (input, init) =>
+        fetch(input, { ...init, signal: AbortSignal.timeout(15000) }),
+    },
+  );
+  const genesis = await c.getGenesisHash();
+  if (genesis !== "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG")
+    throw new Error("Wrong network.");
+  const program = new PublicKey(p),
+    mint = new PublicKey(m),
+    [config] = PublicKey.findProgramAddressSync(
+      [Buffer.from("config")],
+      program,
+    ),
+    [capability] = PublicKey.findProgramAddressSync(
+      [Buffer.from("pap-capability")],
+      program,
+    );
+  const accounts = await c.getMultipleAccountsInfoAndContext(
+      [program, config, capability],
+      "finalized",
+    ),
+    [pa, ca, cap] = accounts.value,
+    mi = await getMint(c, mint, "finalized");
+  if (
+    !pa?.executable ||
+    !ca?.owner.equals(program) ||
+    ca.data.length !== 40 ||
+    !ca.data.subarray(0, 8).equals(tag("account:EscrowConfig")) ||
+    !ca.data.subarray(8, 40).equals(mint.toBuffer()) ||
+    !mi.isInitialized ||
+    mi.decimals !== 6
+  )
+    throw new Error("Configuration invalid.");
+  const loader = new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111");
+  if (
+    !pa.owner.equals(loader) ||
+    pa.data.length !== 36 ||
+    pa.data.readUInt32LE(0) !== 2
+  )
+    throw new Error("Loader invalid.");
+  const programData = new PublicKey(pa.data.subarray(4, 36)),
+    pdResult = await c.getAccountInfoAndContext(programData, {
+      commitment: "finalized",
+      minContextSlot: accounts.context.slot,
+    }),
+    pd = pdResult.value;
+  if (
+    !pd?.owner.equals(loader) ||
+    pd.data.length < 45 ||
+    pd.data.readUInt32LE(0) !== 3 ||
+    ![0, 1].includes(pd.data[12])
+  )
+    throw new Error("ProgramData invalid.");
+  const authority =
+    pd.data[12] === 1
+      ? new PublicKey(pd.data.subarray(13, 45)).toBase58()
+      : null;
+  if (authority !== manifest.upgradeAuthority)
+    throw new Error("Authority mismatch.");
+  const papValid =
+    cap?.owner.equals(program) &&
+    !cap.executable &&
+    cap.data.length === 9 &&
+    cap.data.subarray(0, 8).equals(tag("account:PapCapability")) &&
+    cap.data[8] === 1;
+  if (process.argv.includes("--pap") && !papValid)
+    throw new Error("PAP capability invalid.");
+  const artifactComparison = process.argv.includes("--artifact")
+    ? compareArtifact(pd.data.subarray(45), readFileSync(arg("--artifact")))
+    : null;
+  if (
+    artifactComparison &&
+    (!artifactComparison.bytesMatch || !artifactComparison.trailingPaddingZero)
+  )
+    throw new Error("Artifact mismatch.");
+  Object.assign(report, {
+    status: "passed",
+    checkedAt: new Date().toISOString(),
+    genesis,
+    finalizedSlot: accounts.context.slot,
+    programDataFinalizedSlot: pdResult.context.slot,
+    program: p,
+    mint: m,
+    programData: programData.toBase58(),
+    upgradeAuthority: authority,
+    lastUpgradeSlot: pd.data.readBigUInt64LE(4).toString(),
+    executableCodeSha256: sha256(pd.data.subarray(45)),
+    decimals: mi.decimals,
+    mintAuthority: mi.mintAuthority?.toBase58() ?? null,
+    freezeAuthority: mi.freezeAuthority?.toBase58() ?? null,
+    papCapability: papValid
+      ? { address: capability.toBase58(), version: 1 }
+      : null,
+    artifactComparison,
+  });
+  save();
+  console.log(
+    `Read-only devnet identity/capability observations saved to ${file}. No transaction was sent.`,
+  );
 } catch {
+  report.status = "failed";
+  report.checkedAt = new Date().toISOString();
+  save();
   console.error(
-    "Devnet preflight failed. Check network, program, mint and RPC availability. No transaction was sent.",
+    "Devnet preflight failed. Check identities, network, capability, artifact and RPC availability. No transaction was sent.",
   );
   process.exitCode = 1;
 }

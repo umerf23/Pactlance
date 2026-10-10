@@ -406,7 +406,7 @@ Current payments are six-decimal TEST on devnet, with sequential milestones, ori
 
 The [startup-readiness plan](docs/startup-readiness.md) proposes focused pilot work, including video editing. Pilot evidence, sustainable pricing, reviewer governance, and broader payment/network support require further design and validation. They are not shipped integrations or promised dates.
 
-Older phase documents preserve historical blockers and test counts. In particular, Phase 3 funding status and early development/CI descriptions predate the current escrow and SBF tests. The current PAP editor also contains older copy describing transfers as unavailable; actual preparation remains conditional on the API's rollout/capability gates. This README documents current implementation and dated evidence; use the linked runbooks for environment-specific verification.
+Older phase documents preserve historical blockers and test counts. In particular, Phase 3 funding status and early development/CI descriptions predate the current escrow and SBF tests. PAP payment preparation remains conditional on the API's rollout/capability gates. This README documents current implementation and dated evidence; use the linked runbooks for environment-specific verification.
 
 ## Deployment
 
@@ -451,3 +451,17 @@ No license file is present in the inspected repository. An MIT, Apache, or other
 - [Startup readiness](docs/startup-readiness.md)
 - [CI workflow](.github/workflows/ci.yml)
 - [Issue tracker](https://github.com/umerf23/Pactlance/issues)
+
+## Release qualification and operations
+
+Use [production readiness](docs/production-readiness.md) to qualify the exact clean candidate and [the operations runbook](docs/operations-runbook.md) for alerts, recovery, backup restoration and compatible rollback. The protected read-only `/api/monitor` endpoint and support diagnostics expose aggregate operational health.
+
+```sh
+npm run verify:release -- --suite web
+npm run verify:release -- --suite native
+npm run verify:release -- --suite runtime
+npm run release:init -- --app https://YOUR_PREVIEW_HOST --target pap-preview
+npm run release:assess
+```
+
+Release records bind evidence to commit/tree/lockfile and target identity. Missing live/operational evidence remains blocked; mainnet is always NO_GO. Local automated results do not establish browser wallet, hosted privacy, customer-pilot or independent-review completion.

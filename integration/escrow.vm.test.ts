@@ -357,13 +357,11 @@ describe("real escrow instructions", () => {
     const now = Number(svm.getClock().unixTimestamp),
       fresh = structuredClone(a);
     fresh.terms.projectId = "02020202-0202-0202-0202-020202020202";
-    fresh.terms.milestones = fresh.terms.milestones
-      .slice(0, 1)
-      .map((m) => ({
-        ...m,
-        fundingDeadline: new Date((now + 100) * 1000).toISOString(),
-        deliveryDeadline: new Date((now + 200) * 1000).toISOString(),
-      }));
+    fresh.terms.milestones = fresh.terms.milestones.slice(0, 1).map((m) => ({
+      ...m,
+      fundingDeadline: new Date((now + 100) * 1000).toISOString(),
+      deliveryDeadline: new Date((now + 200) * 1000).toISOString(),
+    }));
     fresh.commitment = await agreementCommitment(fresh.terms, fresh.salt);
     const d = addresses(fresh);
     send([await createProjectInstruction(fresh, client.publicKey)], []);

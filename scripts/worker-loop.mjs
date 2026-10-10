@@ -23,12 +23,22 @@ while (!stop.signal.aborted) {
       headers: { authorization: `Bearer ${secret}` },
       signal: AbortSignal.any([stop.signal, AbortSignal.timeout(290000)]),
     });
-    console.log(`Worker job HTTP ${result.status}`);
-  } catch (e) {
+    const body = await result.json().catch(() => null);
+    console.log(
+      JSON.stringify({
+        event: "worker_http",
+        status: result.status,
+        ...(Number.isSafeInteger(body?.summary?.failed)
+          ? { failed: body.summary.failed }
+          : {}),
+        ...(Number.isSafeInteger(body?.summary?.processed)
+          ? { processed: body.summary.processed }
+          : {}),
+      }),
+    );
+  } catch {
     if (!stop.signal.aborted)
-      console.log(
-        `Worker job failed: ${e.name}. Will resume from saved state.`,
-      );
+      console.log("Worker request failed. Will resume from saved state.");
   }
   if (!stop.signal.aborted)
     try {

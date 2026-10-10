@@ -144,6 +144,7 @@ export async function runProjectWorker(projectId: string) {
       raw: saved.raw,
       blockhash: saved.blockhash,
       last_valid_block_height: saved.lastValidBlockHeight,
+      created_at: saved.createdAt,
       status: "pending",
     };
   const write = old

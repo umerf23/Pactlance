@@ -278,7 +278,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
             onChange={(event) => setReviewersAgreed(event.target.checked)}
           />
           {form.protocol
-            ? "Both reviewers have agreed to serve. PAP decisions are recorded off-chain and cannot transfer funds."
+            ? "Both reviewers have agreed to serve. This attestation records my confirmation, not their wallet signatures. Disputed funds may remain locked until an authorized reviewer or both parties resolve them."
             : "Both reviewers have agreed to serve, and I understand disputed funds may stay locked if nobody resolves the dispute."}
         </label>
         <PapBuilder
@@ -397,7 +397,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
         </button>
         <p className="notice">
           {form.protocol ? (
-            "PAP saves shared terms and makes no deposit. Rule execution and payment eligibility are off-chain; token transfers are unavailable for this policy profile."
+            "PAP saves shared terms and makes no deposit. Rules and payment eligibility run off-chain. Payment actions require a compatible devnet deployment, both participants’ acceptance and explicit authorized wallet transactions."
           ) : (
             <>
               Saving creates shared terms and makes no deposit. In Payment

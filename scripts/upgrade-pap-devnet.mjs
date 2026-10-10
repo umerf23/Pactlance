@@ -1,5 +1,10 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
+import {
+  releaseContext,
+  requireCleanSource,
+  compareArtifact,
+} from "./lib/release-context.mjs";
 import { spawnSync } from "node:child_process";
 import {
   Connection,
@@ -18,6 +23,22 @@ if (!process.argv.includes("--upgrade")) {
   );
   process.exit(0);
 }
+mkdirSync("validation-results", { recursive: true });
+const report = {
+  schemaVersion: 2,
+  kind: "pap-upgrade-verification",
+  status: "in_progress",
+  source: releaseContext(),
+  network: "devnet",
+  checkedAt: new Date().toISOString(),
+  liveWalletJourneyVerified: false,
+};
+const save = () =>
+  writeFileSync(
+    "validation-results/pap-upgrade.json",
+    JSON.stringify(report, null, 2) + "\n",
+  );
+save();
 const loader = new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111");
 const tag = (value) =>
   createHash("sha256").update(value).digest().subarray(0, 8);
@@ -29,6 +50,7 @@ function run(command, args) {
     );
 }
 try {
+  requireCleanSource();
   const path = process.env.DEPLOYER_KEYPAIR;
   if (!path)
     throw new Error(
@@ -103,7 +125,10 @@ try {
   ]);
   const binary = readFileSync("contracts/target/deploy/pactlance.so"),
     binaryHash = createHash("sha256").update(binary).digest("hex");
-  if (!original.data.subarray(45, 45 + binary.length).equals(binary))
+  if (
+    !compareArtifact(original.data.subarray(45), binary).bytesMatch ||
+    !compareArtifact(original.data.subarray(45), binary).trailingPaddingZero
+  )
     run("solana", [
       "program",
       "deploy",
@@ -129,7 +154,8 @@ try {
     !deployed?.owner.equals(loader) ||
     deployed.data[12] !== 1 ||
     !deployed.data.subarray(13, 45).equals(signer.publicKey.toBuffer()) ||
-    !deployed.data.subarray(45, 45 + binary.length).equals(binary)
+    !compareArtifact(deployed.data.subarray(45), binary).bytesMatch ||
+    !compareArtifact(deployed.data.subarray(45), binary).trailingPaddingZero
   )
     throw new Error(
       "Finalized binary/authority verification failed; keep PAP_PAYMENTS_ENABLED=false.",
@@ -176,28 +202,28 @@ try {
     throw new Error(
       "PAP capability verification failed; keep payment execution disabled.",
     );
-  mkdirSync("validation-results", { recursive: true });
-  writeFileSync(
-    "validation-results/pap-upgrade.json",
-    JSON.stringify(
-      {
-        network: "devnet",
-        program: program.toBase58(),
-        mint: mint.toBase58(),
-        binaryHash,
-        capability: capability.toBase58(),
-        capabilitySignature: signature,
-        verifiedAt: new Date().toISOString(),
-        liveWalletJourneyVerified: false,
-      },
-      null,
-      2,
-    ) + "\n",
-  );
+  Object.assign(report, {
+    status: "passed",
+    checkedAt: new Date().toISOString(),
+    program: program.toBase58(),
+    mint: mint.toBase58(),
+    binaryHash,
+    capability: capability.toBase58(),
+    capabilityVersion: 1,
+    capabilitySignature: signature,
+    upgradeAuthority: signer.publicKey.toBase58(),
+    programData: pd.toBase58(),
+  });
+  save();
   console.log(
     "Existing devnet program upgraded and PAP capability verified. Apply the reviewer-access migration, set server-only PAP_PAYMENTS_ENABLED=true, rebuild the app, and complete the live wallet runbook. No participant payments were performed.",
   );
-} catch (error) {
-  console.error(error.message);
+} catch {
+  report.status = "failed";
+  report.checkedAt = new Date().toISOString();
+  save();
+  console.error(
+    "PAP upgrade failed. Keep payments disabled; deployment identities were preserved. Review local tool output privately.",
+  );
   process.exitCode = 1;
 }

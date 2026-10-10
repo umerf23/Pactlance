@@ -1941,6 +1941,27 @@ footer {
   overflow: auto;
   padding: 1rem;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 10px;
+}
+
+.operations-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 1rem;
+}
+.operations-metrics div {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  min-width: 0;
+}
+.operations-metrics dt {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.operations-metrics dd {
+  margin: 0.5rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 600;
 }

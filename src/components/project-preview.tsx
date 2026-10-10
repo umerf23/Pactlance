@@ -182,8 +182,8 @@ export function ProjectPreview() {
                     </div>
                   </dl>
                   <div className="action-note">
-                    Open the workspace to accept real project terms and use devnet
-                    escrow after deployment setup.
+                    Open the workspace to accept real project terms and use
+                    devnet escrow after deployment setup.
                   </div>
                   <button
                     className="primary"

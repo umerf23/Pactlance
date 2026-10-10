@@ -650,7 +650,7 @@ export function Workspace({
                       wallet={session.user.wallet}
                     />
                     <OperationsDashboard
-                      key={`${detail.project.id}:payments`}
+                      key={`${detail.project.id}:${session.user.wallet}:payments`}
                       wallet={session.user.wallet}
                       projectId={detail.project.id}
                     />
@@ -662,7 +662,7 @@ export function Workspace({
                       projectId={detail.project.id}
                     />
                     <OperationsDashboard
-                      key={detail.project.id}
+                      key={`${detail.project.id}:${session.user.wallet}`}
                       wallet={session.user.wallet}
                       projectId={detail.project.id}
                     />

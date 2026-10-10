@@ -15,7 +15,10 @@ import {
   getAccount,
 } from "@solana/spl-token";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import {
+  releaseContext,
+  requireCleanSource,
+} from "../scripts/lib/release-context.mjs";
 import { randomUUID } from "node:crypto";
 import { templateProtocol } from "../src/lib/pap/templates";
 import { makeTerms } from "../src/lib/agreements/schema";
@@ -48,6 +51,8 @@ beforeAll(() => {
         schemaVersion: 1,
         kind: "scripted-pap-devnet-program-test",
         status: "in_progress",
+        source: releaseContext(),
+        network: "devnet",
         checkedAt: new Date().toISOString(),
         transactions: [],
         limitation:
@@ -59,6 +64,7 @@ beforeAll(() => {
   );
 });
 it("executes PAP explicit funding, approval, dispute allocation and finalized recovery on devnet", async () => {
+  const source = requireCleanSource();
   const path = process.env.DEPLOYER_KEYPAIR,
     program = process.env.NEXT_PUBLIC_ESCROW_PROGRAM_ID,
     mintAddress = process.env.NEXT_PUBLIC_TEST_TOKEN_MINT;
@@ -167,9 +173,16 @@ it("executes PAP explicit funding, approval, dispute allocation and finalized re
     kind: "scripted-pap-devnet-program-test",
     status: "in_progress",
     checkedAt: new Date().toISOString(),
-    commit: execFileSync("git", ["rev-parse", "HEAD"], {
-      encoding: "utf8",
-    }).trim(),
+    source,
+    commit: source.commit,
+    balancesVerified: false,
+    balances: {
+      clientStart: ca.amount.toString(),
+      freelancerStart: fa.amount.toString(),
+      mintedUnits: "200000000",
+      clientEnd: "",
+      freelancerEnd: "",
+    },
     network: "devnet",
     boundCommitment: a.commitment,
     program,
@@ -184,6 +197,7 @@ it("executes PAP explicit funding, approval, dispute allocation and finalized re
       signature: string;
       explorer: string;
       commitment: string;
+      finalizedSlot: number;
     }[],
     limitations:
       "Generated independent test signers. Does not test Supabase sign-in, browser wallet prompts, off-chain PAP rule evaluation, private uploads or human usability.",
@@ -224,6 +238,7 @@ it("executes PAP explicit funding, approval, dispute allocation and finalized re
       signature,
       explorer: `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
       commitment: "finalized",
+      finalizedSlot: result.context.slot,
     });
     saveEvidence();
     return saved;
@@ -298,6 +313,13 @@ it("executes PAP explicit funding, approval, dispute allocation and finalized re
   expect((await getAccount(c, fa.address, "finalized")).amount).toBe(
     160000000n,
   );
+  evidence.balances.clientEnd = (
+    await getAccount(c, ca.address, "finalized")
+  ).amount.toString();
+  evidence.balances.freelancerEnd = (
+    await getAccount(c, fa.address, "finalized")
+  ).amount.toString();
+  evidence.balancesVerified = true;
   evidence.status = "passed";
   saveEvidence();
 }, 300000);

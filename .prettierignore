@@ -6,3 +6,5 @@ contracts/Cargo.lock
 docs/original-blueprint.md
 docs/build-phases.md
 docs/phase-1-workbook.md
+
+validation-results/

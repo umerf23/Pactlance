@@ -15,20 +15,32 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - run: npm install --global npm@11.9.0
       - run: npm ci
-      - run: npm run check
+      - run: npm run verify:release -- --suite web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-evidence-${{ github.sha }}
+          path: validation-results/ci/web.json
+          retention-days: 30
   program-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install pinned Rust
         run: rustup toolchain install 1.90.0 --profile minimal --component rustfmt
-      - name: Check formatting
-        working-directory: contracts
-        run: cargo +1.90.0 fmt --all --check
-      - name: Native program unit tests (not validator integration)
-        working-directory: contracts
-        run: cargo +1.90.0 test --workspace --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm install --global npm@11.9.0
+      - run: node scripts/verify-release.mjs --suite native
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-evidence-${{ github.sha }}
+          path: validation-results/ci/native.json
+          retention-days: 30
   program-runtime:
     runs-on: ubuntu-latest
     steps:
@@ -39,13 +51,36 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - run: npm install --global npm@11.9.0
       - run: npm ci
       - name: Install pinned Agave build tools
         run: |
           curl -fsSL https://github.com/anza-xyz/agave/releases/download/v2.3.0/solana-release-x86_64-unknown-linux-gnu.tar.bz2 -o /tmp/agave.tar.bz2
           tar -xjf /tmp/agave.tar.bz2 -C /tmp
           echo "/tmp/solana-release/bin" >> "$GITHUB_PATH"
-      - name: Compile escrow for Solana
-        run: cargo-build-sbf --tools-version v1.56 --manifest-path contracts/programs/pactlance/Cargo.toml -- --locked
-      - name: Execute escrow and token programs in LiteSVM
-        run: npm run test:escrow
+      - run: npm run verify:release -- --suite runtime
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-evidence-${{ github.sha }}
+          path: validation-results/ci/runtime.json
+          retention-days: 30
+  release-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Classify sensitive release changes
+        env:
+          RELEASE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/release-diff.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-diff-${{ github.sha }}
+          path: validation-results/ci/release-diff.json
+          retention-days: 30

@@ -9,16 +9,7 @@
   "instructions": [
     {
       "name": "accept_project",
-      "discriminator": [
-        142,
-        141,
-        5,
-        68,
-        121,
-        101,
-        7,
-        120
-      ],
+      "discriminator": [142, 141, 5, 68, 121, 101, 7, 120],
       "accounts": [
         {
           "name": "participant",
@@ -33,26 +24,14 @@
         {
           "name": "commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
     },
     {
       "name": "accept_settlement",
-      "discriminator": [
-        203,
-        247,
-        191,
-        177,
-        25,
-        90,
-        88,
-        75
-      ],
+      "discriminator": [203, 247, 191, 177, 25, 90, 88, 75],
       "accounts": [
         {
           "name": "actor",
@@ -60,9 +39,7 @@
         },
         {
           "name": "project",
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -71,17 +48,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -117,16 +84,7 @@
     },
     {
       "name": "approve_milestone",
-      "discriminator": [
-        145,
-        85,
-        92,
-        60,
-        50,
-        130,
-        219,
-        106
-      ],
+      "discriminator": [145, 85, 92, 60, 50, 130, 219, 106],
       "accounts": [
         {
           "name": "client",
@@ -135,9 +93,7 @@
         {
           "name": "project",
           "writable": true,
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -146,17 +102,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -180,13 +126,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -208,16 +148,7 @@
     },
     {
       "name": "approve_pap_milestone",
-      "discriminator": [
-        154,
-        141,
-        255,
-        206,
-        163,
-        5,
-        75,
-        126
-      ],
+      "discriminator": [154, 141, 255, 206, 163, 5, 75, 126],
       "accounts": [
         {
           "name": "client",
@@ -226,9 +157,7 @@
         {
           "name": "project",
           "writable": true,
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -237,17 +166,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -271,13 +190,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -299,26 +212,14 @@
         {
           "name": "submission",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
     },
     {
       "name": "cancel_remaining",
-      "discriminator": [
-        41,
-        54,
-        90,
-        98,
-        141,
-        25,
-        60,
-        22
-      ],
+      "discriminator": [41, 54, 90, 98, 141, 25, 60, 22],
       "accounts": [
         {
           "name": "client",
@@ -341,26 +242,14 @@
         {
           "name": "commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
     },
     {
       "name": "claim_after_review",
-      "discriminator": [
-        114,
-        16,
-        249,
-        229,
-        128,
-        156,
-        74,
-        198
-      ],
+      "discriminator": [114, 16, 249, 229, 128, 156, 74, 198],
       "accounts": [
         {
           "name": "actor",
@@ -369,9 +258,7 @@
         {
           "name": "project",
           "writable": true,
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -380,17 +267,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -414,13 +291,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -446,16 +317,7 @@
     },
     {
       "name": "create_pap_project",
-      "discriminator": [
-        41,
-        76,
-        198,
-        209,
-        219,
-        26,
-        55,
-        42
-      ],
+      "discriminator": [41, 76, 198, 209, 219, 26, 55, 42],
       "accounts": [
         {
           "name": "config",
@@ -463,14 +325,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
+                "value": [99, 111, 110, 102, 105, 103]
               }
             ]
           }
@@ -487,15 +342,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  106,
-                  101,
-                  99,
-                  116
-                ]
+                "value": [112, 114, 111, 106, 101, 99, 116]
               },
               {
                 "kind": "arg",
@@ -529,16 +376,7 @@
     },
     {
       "name": "create_project",
-      "discriminator": [
-        148,
-        219,
-        181,
-        42,
-        221,
-        114,
-        145,
-        190
-      ],
+      "discriminator": [148, 219, 181, 42, 221, 114, 145, 190],
       "accounts": [
         {
           "name": "config",
@@ -546,14 +384,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
+                "value": [99, 111, 110, 102, 105, 103]
               }
             ]
           }
@@ -570,15 +401,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  106,
-                  101,
-                  99,
-                  116
-                ]
+                "value": [112, 114, 111, 106, 101, 99, 116]
               },
               {
                 "kind": "arg",
@@ -612,16 +435,7 @@
     },
     {
       "name": "execute_settlement",
-      "discriminator": [
-        237,
-        120,
-        82,
-        62,
-        224,
-        193,
-        147,
-        137
-      ],
+      "discriminator": [237, 120, 82, 62, 224, 193, 147, 137],
       "accounts": [
         {
           "name": "actor",
@@ -630,9 +444,7 @@
         {
           "name": "project",
           "writable": true,
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -641,17 +453,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -675,13 +477,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -712,16 +508,7 @@
     },
     {
       "name": "fund_milestone",
-      "discriminator": [
-        104,
-        130,
-        72,
-        76,
-        84,
-        58,
-        37,
-        181
-      ],
+      "discriminator": [104, 130, 72, 76, 84, 58, 37, 181],
       "accounts": [
         {
           "name": "client",
@@ -742,17 +529,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -772,13 +549,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -809,16 +580,7 @@
     },
     {
       "name": "initialize_config",
-      "discriminator": [
-        208,
-        127,
-        21,
-        1,
-        194,
-        190,
-        196,
-        70
-      ],
+      "discriminator": [208, 127, 21, 1, 194, 190, 196, 70],
       "accounts": [
         {
           "name": "authority",
@@ -842,14 +604,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
+                "value": [99, 111, 110, 102, 105, 103]
               }
             ]
           }
@@ -863,16 +618,7 @@
     },
     {
       "name": "initialize_pap_capability",
-      "discriminator": [
-        236,
-        61,
-        113,
-        187,
-        102,
-        184,
-        36,
-        230
-      ],
+      "discriminator": [236, 61, 113, 187, 102, 184, 36, 230],
       "accounts": [
         {
           "name": "authority",
@@ -894,20 +640,7 @@
               {
                 "kind": "const",
                 "value": [
-                  112,
-                  97,
-                  112,
-                  45,
-                  99,
-                  97,
-                  112,
-                  97,
-                  98,
-                  105,
-                  108,
-                  105,
-                  116,
-                  121
+                  112, 97, 112, 45, 99, 97, 112, 97, 98, 105, 108, 105, 116, 121
                 ]
               }
             ]
@@ -922,16 +655,7 @@
     },
     {
       "name": "open_dispute",
-      "discriminator": [
-        137,
-        25,
-        99,
-        119,
-        23,
-        223,
-        161,
-        42
-      ],
+      "discriminator": [137, 25, 99, 119, 23, 223, 161, 42],
       "accounts": [
         {
           "name": "actor",
@@ -939,9 +663,7 @@
         },
         {
           "name": "project",
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -950,17 +672,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -979,26 +691,14 @@
         {
           "name": "commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
     },
     {
       "name": "propose_settlement",
-      "discriminator": [
-        228,
-        149,
-        56,
-        61,
-        137,
-        43,
-        106,
-        25
-      ],
+      "discriminator": [228, 149, 56, 61, 137, 43, 106, 25],
       "accounts": [
         {
           "name": "actor",
@@ -1006,9 +706,7 @@
         },
         {
           "name": "project",
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -1017,17 +715,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -1063,16 +751,7 @@
     },
     {
       "name": "refund_non_delivery",
-      "discriminator": [
-        197,
-        144,
-        27,
-        167,
-        117,
-        84,
-        103,
-        16
-      ],
+      "discriminator": [197, 144, 27, 167, 117, 84, 103, 16],
       "accounts": [
         {
           "name": "actor",
@@ -1081,9 +760,7 @@
         {
           "name": "project",
           "writable": true,
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -1092,17 +769,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -1126,13 +793,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -1158,16 +819,7 @@
     },
     {
       "name": "resolve_dispute",
-      "discriminator": [
-        231,
-        6,
-        202,
-        6,
-        96,
-        103,
-        12,
-        230
-      ],
+      "discriminator": [231, 6, 202, 6, 96, 103, 12, 230],
       "accounts": [
         {
           "name": "actor",
@@ -1176,9 +828,7 @@
         {
           "name": "project",
           "writable": true,
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -1187,17 +837,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -1221,13 +861,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
+                "value": [118, 97, 117, 108, 116]
               },
               {
                 "kind": "account",
@@ -1262,16 +896,7 @@
     },
     {
       "name": "revise_pap_project",
-      "discriminator": [
-        5,
-        34,
-        189,
-        74,
-        11,
-        146,
-        253,
-        180
-      ],
+      "discriminator": [5, 34, 189, 74, 11, 146, 253, 180],
       "accounts": [
         {
           "name": "client",
@@ -1290,10 +915,7 @@
         {
           "name": "previous_commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         },
         {
@@ -1308,16 +930,7 @@
     },
     {
       "name": "revise_project",
-      "discriminator": [
-        74,
-        135,
-        41,
-        32,
-        162,
-        38,
-        151,
-        0
-      ],
+      "discriminator": [74, 135, 41, 32, 162, 38, 151, 0],
       "accounts": [
         {
           "name": "client",
@@ -1336,10 +949,7 @@
         {
           "name": "previous_commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         },
         {
@@ -1354,16 +964,7 @@
     },
     {
       "name": "submit_delivery",
-      "discriminator": [
-        217,
-        177,
-        33,
-        54,
-        136,
-        185,
-        123,
-        96
-      ],
+      "discriminator": [217, 177, 33, 54, 136, 185, 123, 96],
       "accounts": [
         {
           "name": "freelancer",
@@ -1371,9 +972,7 @@
         },
         {
           "name": "project",
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -1382,17 +981,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -1411,26 +1000,14 @@
         {
           "name": "commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
     },
     {
       "name": "submit_pap_delivery",
-      "discriminator": [
-        98,
-        81,
-        176,
-        252,
-        251,
-        193,
-        107,
-        10
-      ],
+      "discriminator": [98, 81, 176, 252, 251, 193, 107, 10],
       "accounts": [
         {
           "name": "freelancer",
@@ -1438,9 +1015,7 @@
         },
         {
           "name": "project",
-          "relations": [
-            "milestone"
-          ]
+          "relations": ["milestone"]
         },
         {
           "name": "milestone",
@@ -1449,17 +1024,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  108,
-                  101,
-                  115,
-                  116,
-                  111,
-                  110,
-                  101
-                ]
+                "value": [109, 105, 108, 101, 115, 116, 111, 110, 101]
               },
               {
                 "kind": "account",
@@ -1478,10 +1043,7 @@
         {
           "name": "commitment",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
@@ -1490,109 +1052,37 @@
   "accounts": [
     {
       "name": "EscrowConfig",
-      "discriminator": [
-        138,
-        174,
-        227,
-        187,
-        239,
-        148,
-        1,
-        44
-      ]
+      "discriminator": [138, 174, 227, 187, 239, 148, 1, 44]
     },
     {
       "name": "Milestone",
-      "discriminator": [
-        38,
-        210,
-        239,
-        177,
-        85,
-        184,
-        10,
-        44
-      ]
+      "discriminator": [38, 210, 239, 177, 85, 184, 10, 44]
     },
     {
       "name": "Project",
-      "discriminator": [
-        205,
-        168,
-        189,
-        202,
-        181,
-        247,
-        142,
-        19
-      ]
+      "discriminator": [205, 168, 189, 202, 181, 247, 142, 19]
     },
     {
       "name": "PapCapability",
-      "discriminator": [
-        13,
-        161,
-        106,
-        91,
-        123,
-        235,
-        163,
-        162
-      ]
+      "discriminator": [13, 161, 106, 91, 123, 235, 163, 162]
     }
   ],
   "events": [
     {
       "name": "MilestoneChanged",
-      "discriminator": [
-        197,
-        158,
-        240,
-        225,
-        5,
-        249,
-        200,
-        223
-      ]
+      "discriminator": [197, 158, 240, 225, 5, 249, 200, 223]
     },
     {
       "name": "MilestoneSettled",
-      "discriminator": [
-        14,
-        243,
-        90,
-        90,
-        207,
-        201,
-        235,
-        116
-      ]
+      "discriminator": [14, 243, 90, 90, 207, 201, 235, 116]
     },
     {
       "name": "ProjectChanged",
-      "discriminator": [
-        215,
-        156,
-        69,
-        99,
-        188,
-        75,
-        245,
-        185
-      ]
+      "discriminator": [215, 156, 69, 99, 188, 75, 245, 185]
     },
     {
       "name": "SettlementProposed",
-      "discriminator": [
-        139,
-        32,
-        64,
-        205,
-        27,
-        154,
-        100,
-        147
-      ]
+      "discriminator": [139, 32, 64, 205, 27, 154, 100, 147]
     }
   ],
   "errors": [
@@ -1688,10 +1178,7 @@
           {
             "name": "submission",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
@@ -1705,10 +1192,7 @@
           {
             "name": "agreement_commitment",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
@@ -1726,10 +1210,7 @@
           {
             "name": "dispute_commitment",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
@@ -1891,10 +1372,7 @@
           {
             "name": "commitment",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
@@ -1912,10 +1390,7 @@
           {
             "name": "id",
             "type": {
-              "array": [
-                "u8",
-                16
-              ]
+              "array": ["u8", 16]
             }
           },
           {
@@ -1925,10 +1400,7 @@
           {
             "name": "commitment",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {

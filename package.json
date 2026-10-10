@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests",
-    "check": "npm run check:secrets && npm run lint && npm run typecheck && npm test && npm run build",
+    "check": "npm run check:secrets && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
     "doctor": "node scripts/doctor.mjs",
     "test:program": "cargo test --manifest-path contracts/Cargo.toml",
     "format": "prettier --write .",
@@ -27,7 +27,11 @@
     "test:pap:devnet": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run devnet/pap-payments.test.ts",
     "test:devnet": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run devnet/workflow.test.ts",
     "check:secrets": "node scripts/check-secrets.mjs",
-    "check:deployment": "node --env-file-if-exists=.env.local scripts/check-deployment.mjs"
+    "check:deployment": "node --env-file-if-exists=.env.local scripts/check-deployment.mjs",
+    "verify:release": "node scripts/verify-release.mjs",
+    "release:init": "node scripts/release-record.mjs init",
+    "release:assess": "node scripts/release-record.mjs assess",
+    "release:attach": "node scripts/release-record.mjs attach"
   },
   "dependencies": {
     "@anchor-lang/core": "0.32.2",
