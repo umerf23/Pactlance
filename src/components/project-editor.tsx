@@ -6,6 +6,7 @@ import { agreementInput, type AgreementInput } from "@/lib/agreements/schema";
 type Props = {
   wallet: string;
   initial?: AgreementInput;
+  defaultRole?: "freelancer" | "client";
   onSave: (agreement: AgreementInput) => Promise<void>;
   onCancel: () => void;
 };
@@ -29,14 +30,20 @@ function localDate(iso: string) {
 function isoDate(value: string) {
   return value ? new Date(value).toISOString() : "";
 }
-export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
+export function ProjectEditor({
+  wallet,
+  initial,
+  onSave,
+  onCancel,
+  defaultRole = "freelancer",
+}: Props) {
   const [form, setForm] = useState<AgreementInput>(
     () =>
       initial ?? {
         title: "",
         scope: "",
-        clientWallet: "",
-        freelancerWallet: wallet,
+        clientWallet: defaultRole === "client" ? wallet : "",
+        freelancerWallet: defaultRole === "freelancer" ? wallet : "",
         reviewerWallet: "",
         backupReviewerWallet: "",
         reviewHours: 72,
@@ -46,7 +53,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [role, setRole] = useState<"freelancer" | "client">("freelancer");
+  const [role, setRole] = useState<"freelancer" | "client">(defaultRole);
   const [reviewersAgreed, setReviewersAgreed] = useState(false);
   function chooseRole(next: "freelancer" | "client") {
     setRole(next);
@@ -157,10 +164,19 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
         </button>
       </div>
       <p className="muted">
-        Define each batch before work begins. Saving creates a new immutable
-        version; both wallets must sign it separately.
+        Complete the sections below. Saving creates an agreement for both people
+        to review and sign; it does not move money.
       </p>
+      <nav className="editor-sections" aria-label="Agreement setup sections">
+        <a href="#setup-basics">1. Project</a>
+        <a href="#setup-people">2. People</a>
+        <a href="#setup-milestones">3. Milestones</a>
+        <a href="#setup-rules">4. Review rules</a>
+      </nav>
       <fieldset disabled={busy}>
+        <h3 id="setup-basics" className="setup-heading">
+          1. What work are you agreeing on?
+        </h3>
         {!initial ? (
           <>
             <label>
@@ -198,20 +214,29 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
           <input
             required
             maxLength={120}
+            placeholder="For example: Edit five product videos"
             value={form.title}
             onChange={(e) => field("title", e.target.value)}
           />
         </label>
         <label>
-          Overall scope
+          Describe the project
           <textarea
             required
             minLength={10}
             maxLength={8000}
+            placeholder="Explain what is included, what the client provides, and what the freelancer will deliver."
             value={form.scope}
             onChange={(e) => field("scope", e.target.value)}
           />
         </label>
+        <h3 id="setup-people" className="setup-heading">
+          2. Who is involved?
+        </h3>
+        <p>
+          The client adds payment; the freelancer delivers work. Your connected
+          wallet is filled in automatically. Reviewers help resolve disputes.
+        </p>
         <div className="form-grid">
           {(
             [
@@ -223,6 +248,15 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
           ).map(([key, label]) => (
             <label key={key}>
               {label}
+              <small>
+                {key === "clientWallet"
+                  ? "The person paying for work"
+                  : key === "freelancerWallet"
+                    ? "The person delivering work"
+                    : key === "reviewerWallet"
+                      ? "First person authorized to resolve a dispute"
+                      : "Takes over after the primary reviewer’s time expires"}
+              </small>
               <input
                 required
                 spellCheck={false}
@@ -241,7 +275,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
           ))}
           {!form.protocol ? (
             <label>
-              Review window (hours)
+              Client review period (hours)
               <input
                 type="number"
                 min={1}
@@ -253,7 +287,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
             </label>
           ) : null}
           <label>
-            Backup activates after dispute (hours)
+            Backup reviewer takes over after (hours)
             <input
               type="number"
               min={1}
@@ -281,16 +315,13 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
             ? "Both reviewers have agreed to serve. This attestation records my confirmation, not their wallet signatures. Disputed funds may remain locked until an authorized reviewer or both parties resolve them."
             : "Both reviewers have agreed to serve, and I understand disputed funds may stay locked if nobody resolves the dispute."}
         </label>
-        <PapBuilder
-          value={form.protocol}
-          count={form.milestones.length}
-          allowEnable={!initial}
-          onChange={(p) => field("protocol", p)}
-        />
-        <h3>Sequential milestones</h3>
+        <h3 id="setup-milestones" className="setup-heading">
+          3. Break the work into milestones
+        </h3>
         <p className="muted">
-          Milestones execute in order. Dates use your browser’s local timezone
-          and are stored in UTC.
+          Each milestone is a batch of work with its own amount and deadline.
+          They are funded and settled in order. Dates use your browser’s local
+          timezone and are stored in UTC.
         </p>
         {form.milestones.map((m, i) => (
           <section className="editor-milestone" key={i}>
@@ -353,7 +384,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
             </label>
             <div className="form-grid">
               <label>
-                Funding closes
+                Client must fund by
                 <input
                   type="datetime-local"
                   required
@@ -368,7 +399,7 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
                 />
               </label>
               <label>
-                Delivery due
+                Freelancer must deliver by
                 <input
                   type="datetime-local"
                   required
@@ -395,6 +426,15 @@ export function ProjectEditor({ wallet, initial, onSave, onCancel }: Props) {
         >
           + Add milestone
         </button>
+        <h3 id="setup-rules" className="setup-heading">
+          4. Choose delivery & review rules
+        </h3>
+        <PapBuilder
+          value={form.protocol}
+          count={form.milestones.length}
+          allowEnable={!initial}
+          onChange={(p) => field("protocol", p)}
+        />
         <p className="notice">
           {form.protocol ? (
             "PAP saves shared terms and makes no deposit. Rules and payment eligibility run off-chain. Payment actions require a compatible devnet deployment, both participants’ acceptance and explicit authorized wallet transactions."

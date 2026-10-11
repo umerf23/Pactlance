@@ -29,12 +29,14 @@ export function EvidencePanel({
   index,
   canUpload,
   freelancer,
+  onSaved,
 }: {
   projectId: string;
   version: number;
   index: number;
   canUpload: boolean;
   freelancer: boolean;
+  onSaved?: () => Promise<void>;
 }) {
   const [records, setRecords] = useState<EvidenceRecord[]>([]),
     [error, setError] = useState(""),
@@ -145,9 +147,14 @@ export function EvidencePanel({
       setNote("");
       setURL("");
       setMessage(
-        "Evidence saved privately. It has not been submitted on chain.",
+        purpose === "dispute"
+          ? "Supporting evidence saved privately. Select it when opening the dispute, or share it with the eligible reviewer."
+          : onSaved
+            ? "Saved privately. Select this attachment under its delivery requirement, then choose Submit work for review."
+            : "Saved privately. Go to Payments, load saved attachments, and select this file or link before submitting delivery.",
       );
       await load();
+      await onSaved?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save evidence.");
     } finally {
@@ -168,11 +175,11 @@ export function EvidencePanel({
   }
   return (
     <section className="workspace-card evidence-panel">
-      <h3>Private evidence · milestone {index + 1}</h3>
+      <h3>Work files & evidence · milestone {index + 1}</h3>
       <p className="muted">
-        Agreement version {version}. Completed records cannot be overwritten.
-        Saving evidence does not start the on-chain review clock. A matching
-        hash verifies bytes only, not quality, correctness or authorship.
+        Add delivery files or links, and keep evidence for any dispute. Saved
+        records are private and cannot be overwritten. Uploading alone does not
+        submit work for review.
       </p>
       {error && (
         <p role="alert" className="error-message">
@@ -181,7 +188,9 @@ export function EvidencePanel({
       )}
       <p role="status">{message}</p>
       {records.length === 0 ? (
-        <p>No completed evidence for this milestone yet.</p>
+        <p>
+          No files or links saved yet. Add an attachment below to get started.
+        </p>
       ) : (
         records.map((e) => (
           <article className="evidence-row" key={e.id}>
@@ -191,10 +200,17 @@ export function EvidencePanel({
               {new Date(e.completed_at ?? e.created_at).toLocaleString()}
             </p>
             <p className="preserve-lines">{e.note}</p>
-            <code className="wrap-code">Commitment: {e.commitment}</code>
+            <details className="technical-details">
+              <summary>File verification details</summary>
+              <code className="wrap-code">Commitment: {e.commitment}</code>
+              <p>
+                Agreement version {version}. A matching fingerprint verifies
+                saved bytes, not work quality, correctness, or authorship.
+              </p>
+            </details>
             <div className="operational-actions">
               <button className="secondary" onClick={() => download(e.id)}>
-                Prepare {e.kind === "file" ? "download" : "external link"}
+                Get secure {e.kind === "file" ? "download" : "link"}
               </button>
               {downloads[e.id] && (
                 <a
@@ -212,18 +228,18 @@ export function EvidencePanel({
       )}
       {canUpload && (
         <form onSubmit={save} className="evidence-form">
-          <h4>Add evidence</h4>
+          <h4>Add a file or link</h4>
           <div className="form-grid">
             <label>
-              Purpose
+              What is this attachment for?
               <select
                 value={purpose}
                 onChange={(e) =>
                   setPurpose(e.target.value as "delivery" | "dispute")
                 }
               >
-                {freelancer && <option value="delivery">Delivery</option>}
-                <option value="dispute">Dispute evidence</option>
+                {freelancer && <option value="delivery">Work delivery</option>}
+                <option value="dispute">Supporting a dispute</option>
               </select>
             </label>
             <label>
@@ -284,7 +300,7 @@ export function EvidencePanel({
             </>
           )}
           <button className="primary" disabled={busy}>
-            {busy ? "Verifying and saving…" : "Save private evidence"}
+            {busy ? "Verifying and saving…" : "Save attachment"}
           </button>
         </form>
       )}

@@ -7,6 +7,8 @@ import type { EvidenceRecord } from "@/lib/evidence/schema";
 import { formatTokenAmount } from "@/lib/domain";
 import { EvidencePanel } from "./evidence-panel";
 import { EscrowPanel } from "./escrow-panel";
+import { NextAction, ProgressSteps } from "./workspace-guidance";
+import { deliveryGuidance, workStatus } from "@/lib/workspace-guide";
 type Timeline = {
   id: string;
   action: string;
@@ -25,13 +27,13 @@ type Snapshot = {
 };
 const labels: Record<string, string> = {
   start: "Start work",
-  acknowledge_review: "Acknowledge review notice",
-  request_changes: "Request revision",
-  accept: "Accept work / payment eligible",
+  acknowledge_review: "Confirm you have seen the delivery",
+  request_changes: "Request changes",
+  accept: "Accept work (payment follows)",
   reject: "Reject work",
-  evaluate: "Evaluate elapsed review",
+  evaluate: "Check expired review period",
   dispute: "Open dispute",
-  propose_refund: "Propose non-delivery refund",
+  propose_refund: "Request a non-delivery refund",
   request_cancel: "Propose cancellation",
   approve_cancel: "Approve cancellation",
 };
@@ -157,6 +159,13 @@ export function PapPanel({
       await api("/api/pap", cmd);
       setSnapshot(await api(`/api/pap?project=${id}`));
       setReason("");
+      setNotice(
+        action === "submit"
+          ? "Your work was submitted. The client can review the attached delivery."
+          : action === "accept"
+            ? "Work accepted. Open Payments below to complete the separate wallet payment."
+            : `${labels[action] ?? "Agreement updated"} completed. Your next step is shown below.`,
+      );
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -199,11 +208,52 @@ export function PapPanel({
       );
       canActivate = true;
     } catch {}
+  const guide = deliveryGuidance(
+    milestone,
+    wallet === terms.clientWallet,
+    !!execution,
+  );
+  const availableActions = Object.entries(labels).filter(([action]) =>
+    allowed(action as PapCommand["action"]),
+  );
+  const problemActions = [
+    "reject",
+    "evaluate",
+    "dispute",
+    "propose_refund",
+    "request_cancel",
+    "approve_cancel",
+  ];
+  const actionButton = (action: string, label: string) => (
+    <button
+      className={
+        action === "start" || action === "accept" ? "primary" : "secondary"
+      }
+      disabled={busy}
+      key={action}
+      onClick={() => act(action as PapCommand["action"])}
+    >
+      {label}
+    </button>
+  );
+  async function refreshEvidence() {
+    const data = await api(
+      `/api/evidence?project=${id}&version=${record.version}&index=${index}`,
+    );
+    setEvidence(data.evidence);
+  }
   return (
     <>
-      <section id="project-escrow" className="workspace-card">
+      <section
+        id="project-delivery"
+        className="workspace-card delivery-workspace"
+        aria-busy={busy}
+      >
         <div className="workspace-heading">
-          <h2>Agreement execution</h2>
+          <div>
+            <p className="eyebrow">WORK & DELIVERY</p>
+            <h2>Your milestone checklist</h2>
+          </div>
           <button
             className="secondary"
             disabled={busy}
@@ -214,41 +264,80 @@ export function PapPanel({
               api(`/api/pap?project=${id}`)
                 .then((data) => {
                   setSnapshot(data);
-                  setNotice(
-                    "Protocol refreshed. The current milestone status is shown below.",
-                  );
+                  setNotice("Work status updated. Check your next step below.");
                 })
                 .catch((e) => setError(e.message))
                 .finally(() => setBusy(false));
             }}
           >
-            Refresh protocol
+            Refresh work status
           </button>
         </div>
         {notice && <p role="status">{notice}</p>}
-        <p className="notice">
-          Off-chain workflow. Accepted work and payment eligibility do not mean
-          funds were transferred. Use the payment workspace below to authorize
-          supported devnet payments; only finalized settlements are marked paid.
+        <p className="section-intro">
+          Manage the work here. Wallet payments happen separately in{" "}
+          <a className="inline-link" href="#project-payments">
+            Payments ↓
+          </a>
+          .
         </p>
-        <p>
-          Status:{" "}
-          {execution?.status ??
-            (bothAccepted
-              ? "PROPOSED · ready to activate"
-              : "AWAITING_COUNTERPARTY")}{" "}
-          · active version {execution?.version ?? "none"}
-          {execution && execution.version !== detail.agreement.version
-            ? ` · amendment v${detail.agreement.version} awaits activation`
-            : ""}
-        </p>
+        {snapshot ? (
+          <>
+            <ProgressSteps
+              labels={[
+                "Agree",
+                "Prepare work",
+                "Review",
+                "Confirm payment",
+                milestone?.state === "REFUNDED" ? "Refunded" : "Paid",
+              ]}
+              current={guide.step}
+              complete={
+                !!milestone?.paymentReference &&
+                ["PAID", "REFUNDED"].includes(milestone.state)
+              }
+            />
+            <NextAction
+              role={wallet === terms.clientWallet ? "Client" : "Freelancer"}
+              title={guide.title}
+            >
+              <p>{guide.body}</p>
+              {guide.step === 3 ? (
+                <a className="primary compact" href="#project-payments">
+                  Go to payments ↓
+                </a>
+              ) : null}
+            </NextAction>
+          </>
+        ) : (
+          <p role="status">Loading your milestone checklist…</p>
+        )}
+        <div className="milestone-summary">
+          <span className="outline-pill">
+            {execution
+              ? workStatus(execution.status)
+              : bothAccepted
+                ? "Ready to activate"
+                : "Waiting for agreement signatures"}
+          </span>
+          <span>
+            Active agreement:{" "}
+            {execution ? `version ${execution.version}` : "not activated yet"}
+          </span>
+          {execution && execution.version !== detail.agreement.version ? (
+            <span className="notice">
+              Updated terms (version {detail.agreement.version}) still need
+              activation.
+            </span>
+          ) : null}
+        </div>
         {canActivate ? (
           <button
             className="primary"
             disabled={busy}
             onClick={() => act("activate")}
           >
-            Activate jointly signed version {detail.agreement.version}
+            Activate agreed terms · version {detail.agreement.version}
           </button>
         ) : null}
         {snapshot ? (
@@ -266,40 +355,67 @@ export function PapPanel({
                 ))}
               </select>
             </label>
+            <div className="milestone-summary">
+              <strong>{workStatus(milestone?.state ?? "PENDING")}</strong>
+              <span>
+                {formatTokenAmount(BigInt(terms.milestones[index].amountUnits))}{" "}
+                TEST
+              </span>
+              <span>
+                {milestone?.revisions ?? 0} of {policy.revisionLimit} revisions
+                used
+              </span>
+            </div>
             <p>
-              {milestone?.state ?? "PENDING"} ·{" "}
-              {formatTokenAmount(BigInt(terms.milestones[index].amountUnits))}{" "}
-              TEST · {milestone?.revisions ?? 0}/{policy.revisionLimit}{" "}
-              revisions
-            </p>
-            <p role="status">
-              {milestone?.state === "PENDING"
-                ? "Next: the freelancer starts this milestone."
-                : milestone?.state === "IN_PROGRESS" ||
-                    milestone?.state === "CHANGES_REQUESTED"
-                  ? "Next: the freelancer saves the required delivery evidence, refreshes evidence selections, selects it for each deliverable, and submits it for review."
-                  : milestone?.state === "UNDER_REVIEW"
-                    ? "Next: the client reviews the evidence and accepts, requests a permitted revision, or opens a dispute."
-                    : milestone?.state === "PAYMENT_PENDING"
-                      ? "Next: use the payment workspace below to publish the reviewed delivery and authorize the eligible allocation. No payment has been confirmed yet."
-                      : milestone?.paymentReference
-                        ? `Finalized devnet settlement: ${milestone.paymentReference.signature}`
-                        : "Refresh protocol to check the next permitted action."}
-            </p>
-            <p>
-              Delivery due: {terms.milestones[index].deliveryDeadline} · Review:{" "}
-              {policy.reviewHours} hours
-              {milestone?.reviewDueAt ? ` (ends ${milestone.reviewDueAt})` : ""}
+              Delivery due:{" "}
+              {new Date(
+                terms.milestones[index].deliveryDeadline,
+              ).toLocaleString()}{" "}
+              · Review: {policy.reviewHours} hours
+              {milestone?.reviewDueAt
+                ? ` (ends ${new Date(milestone.reviewDueAt).toLocaleString()})`
+                : ""}
             </p>
             {milestone?.humanReviewRequired ? (
               <p className="notice">
                 Human review required. No automatic payment is authorized.
               </p>
             ) : null}
+            <div id="project-evidence">
+              <EvidencePanel
+                key={`${record.version}:${index}`}
+                projectId={id}
+                version={record.version}
+                index={index}
+                canUpload={true}
+                freelancer={wallet === terms.freelancerWallet}
+                onSaved={refreshEvidence}
+              />
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() =>
+                  api(
+                    `/api/evidence?project=${id}&version=${record.version}&index=${index}`,
+                  )
+                    .then((d) => setEvidence(d.evidence))
+                    .catch((e) => setError(e.message))
+                }
+              >
+                Refresh evidence selections
+              </button>
+            </div>
+            <h3>Delivery requirements</h3>
+            {canSubmit ? (
+              <p className="section-intro">
+                Attach a saved file or link to each requirement. Once every
+                required format is selected, submit the work for client review.
+              </p>
+            ) : null}
             {policy.deliverables.map((d) => (
-              <div key={d.id}>
+              <div className="deliverable-checklist" key={d.id}>
                 <h4>{d.title}</h4>
-                <p>Required: {d.requiredEvidenceTypes.join(", ")}</p>
+                <p>Required formats: {d.requiredEvidenceTypes.join(", ")}</p>
                 {canSubmit
                   ? evidence
                       .filter(
@@ -329,32 +445,10 @@ export function PapPanel({
                   : null}
               </div>
             ))}
-            <div id="project-evidence">
-              <EvidencePanel
-                key={`${record.version}:${index}`}
-                projectId={id}
-                version={record.version}
-                index={index}
-                canUpload={true}
-                freelancer={wallet === terms.freelancerWallet}
-              />
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() =>
-                  api(
-                    `/api/evidence?project=${id}&version=${record.version}&index=${index}`,
-                  )
-                    .then((d) => setEvidence(d.evidence))
-                    .catch((e) => setError(e.message))
-                }
-              >
-                Refresh evidence selections
-              </button>
-            </div>
             <label>
-              Reason / review notes
+              Message for the other person / review notes
               <textarea
+                placeholder="Explain your feedback, requested changes, or reason for this action."
                 value={reason}
                 minLength={10}
                 maxLength={2000}
@@ -362,25 +456,16 @@ export function PapPanel({
               />
             </label>
             <div className="button-row">
-              {Object.entries(labels)
-                .filter(([a]) => allowed(a as PapCommand["action"]))
-                .map(([a, label]) => (
-                  <button
-                    className="secondary"
-                    disabled={busy}
-                    key={a}
-                    onClick={() => act(a as PapCommand["action"])}
-                  >
-                    {label}
-                  </button>
-                ))}
+              {availableActions
+                .filter(([action]) => !problemActions.includes(action))
+                .map(([action, label]) => actionButton(action, label))}
               {canSubmit ? (
                 <button
                   className="primary"
                   disabled={busy || !evidenceComplete}
                   onClick={() => act("submit")}
                 >
-                  Submit verified evidence
+                  Submit work for review
                 </button>
               ) : null}
             </div>
@@ -391,27 +476,67 @@ export function PapPanel({
                 does not select it.
               </p>
             )}
-            <h3>Transition timeline</h3>
-            {snapshot.timeline.length ? (
-              <ol>
-                {snapshot.timeline.map((e) => (
-                  <li key={e.id}>
-                    <strong>
-                      {e.action} · v{e.agreement_version}
-                    </strong>
-                    <p>{e.reason}</p>
-                    <small>
-                      {e.created_at} · {e.actor}
-                      {e.rule_ids.length
-                        ? ` · rules: ${e.rule_ids.join(", ")}`
-                        : ""}
-                    </small>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p>No transitions yet.</p>
-            )}
+            {availableActions.some(([action]) =>
+              problemActions.includes(action),
+            ) ? (
+              <details
+                className="feature-section problem-section"
+                open={milestone?.state === "DISPUTED"}
+              >
+                <summary>
+                  Resolve a problem{" "}
+                  <span>Disputes, cancellation & review deadlines</span>
+                </summary>
+                <p>
+                  Add a clear explanation in the review notes above. A workflow
+                  decision does not itself transfer payment.
+                </p>
+                <div className="button-row">
+                  {availableActions
+                    .filter(([action]) => problemActions.includes(action))
+                    .map(([action, label]) => actionButton(action, label))}
+                </div>
+              </details>
+            ) : null}
+            <details className="technical-details">
+              <summary>Workflow technical details</summary>
+              <p>
+                Status: {execution?.status ?? "not activated"} · Milestone:{" "}
+                {milestone?.state ?? "PENDING"} · Agreement version:{" "}
+                {record.version} · Revision: {snapshot.execution?.revision ?? 0}
+              </p>
+              <p>
+                Rule evaluation runs off-chain. Payment is verified separately.
+              </p>
+            </details>
+            <details className="feature-section">
+              <summary>
+                Work & review history{" "}
+                <span>{snapshot.timeline.length} updates</span>
+              </summary>
+              {snapshot.timeline.length ? (
+                <ol>
+                  {snapshot.timeline.map((e) => (
+                    <li key={e.id}>
+                      <strong>
+                        {labels[e.action] ?? e.action.replaceAll("_", " ")} ·
+                        version {e.agreement_version}
+                      </strong>
+                      <p>{e.reason}</p>
+                      <small>
+                        {new Date(e.created_at).toLocaleString()} · {e.actor} ·
+                        action: {e.action}
+                        {e.rule_ids.length
+                          ? ` · rules: ${e.rule_ids.join(", ")}`
+                          : ""}
+                      </small>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p>No transitions yet.</p>
+              )}
+            </details>
           </>
         ) : null}
         {error ? (

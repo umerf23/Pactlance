@@ -12,7 +12,7 @@ export function LandingPage() {
         </Link>
         <nav className="dapp-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <Link href="/guide">Payment rules</Link>
+          <Link href="/guide">Help & payment rules</Link>
         </nav>
         <Link className="primary" href="/workspace">
           Open workspace ↗
@@ -65,14 +65,14 @@ export function LandingPage() {
               <li>
                 <strong>Deliver</strong>
                 <span>
-                  Share private evidence and record a submission commitment.
+                  Upload files or links and submit the work for client review.
                 </span>
               </li>
               <li>
-                <strong>Settle</strong>
+                <strong>Review & pay</strong>
                 <span>
-                  Approval, eligible timeout, refund or agreed dispute
-                  resolution.
+                  The client approves payment, or both sides follow the agreed
+                  refund and dispute rules.
                 </span>
               </li>
             </ol>
@@ -89,10 +89,14 @@ export function LandingPage() {
             <div>
               <h3>For freelancers</h3>
               <p>
-                Check committed funding before starting. Keep scope and delivery
-                evidence together. Claim an eligible payout when the agreed
-                review period ends without a dispute.
+                Check that the milestone is funded before starting. Upload your
+                work, follow the review checklist, and track the confirmed
+                payment. Deadline outcomes depend on the accepted agreement
+                rules.
               </p>
+              <Link className="secondary" href="/workspace?role=freelancer">
+                I’m a freelancer →
+              </Link>
             </div>
             <div>
               <h3>For clients</h3>
@@ -101,6 +105,9 @@ export function LandingPage() {
                 deliverables before approving. Use the accepted refund and
                 dispute rules when something goes wrong.
               </p>
+              <Link className="secondary" href="/workspace?role=client">
+                I’m a client →
+              </Link>
             </div>
             <div>
               <h3>For reviewers</h3>

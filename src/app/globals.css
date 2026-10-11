@@ -1965,3 +1965,315 @@ footer {
   font-size: 1.5rem;
   font-weight: 600;
 }
+
+/* Guided workspace and accessible, optional technical detail. */
+.dapp-workspace [id] {
+  scroll-margin-top: 24px;
+}
+.dapp-workspace .section-intro {
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 78ch;
+}
+.dapp-workspace .inline-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+.next-action-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 24px;
+  margin-block: 24px;
+  background: #eaf2e5;
+  border: 1px solid #cbdcc2;
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+}
+.next-action-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  font-size: 22px;
+}
+.dapp-workspace .next-action-card h3 {
+  font-size: 21px;
+  line-height: 1.35;
+  margin: 0 0 10px;
+}
+.dapp-workspace .next-action-card .eyebrow {
+  color: #3a5e38;
+  margin-bottom: 7px;
+}
+.dapp-workspace .next-action-body p {
+  max-width: 80ch;
+  margin: 0 0 14px;
+  color: #3f5b43;
+  line-height: 1.7;
+}
+.next-action-body p:last-child {
+  margin-bottom: 0;
+}
+.project-chapters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-block: 20px;
+}
+.dapp-workspace .project-chapters a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  min-height: 48px;
+}
+.project-chapters a span {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.dapp-workspace .project-chapters a:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+}
+.feature-section {
+  margin-top: 22px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.feature-section > summary,
+.technical-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+  min-height: 44px;
+  padding-block: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.feature-section > summary span {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+  padding-left: 19px;
+}
+.feature-section[open] > summary {
+  margin-bottom: 16px;
+}
+.agreement-section {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px 24px;
+}
+.dapp-workspace .agreement-section .agreement-document {
+  margin-top: 0;
+  border: 0;
+  padding: 6px 0 12px;
+}
+.technical-details {
+  font-size: 12px;
+  margin-top: 16px;
+  color: var(--muted);
+}
+.technical-details code,
+.payment-review-recipient code,
+.technical-details small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.problem-section {
+  border: 1px solid #e1d6b9;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: #fcfaf4;
+}
+.journey-progress {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin: 26px 0;
+}
+.journey-progress li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding-top: 14px;
+  border-top: 3px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.journey-progress li.current,
+.journey-progress li.done {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.journey-progress li.current {
+  font-weight: 700;
+}
+.journey-progress small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.journey-step-number {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--inset);
+  border: 1px solid var(--line);
+}
+.current .journey-step-number,
+.done .journey-step-number {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.milestone-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding-block: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.deliverable-checklist {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--inset);
+  margin-block: 12px;
+  padding: 16px;
+}
+.dapp-workspace .deliverable-checklist h4 {
+  color: var(--ink);
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+.editor-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-block: 14px;
+}
+.dapp-workspace .editor-sections a {
+  padding: 10px 14px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--inset);
+  font-size: 13px;
+  color: var(--ink);
+}
+.dapp-workspace .setup-heading {
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  margin: 26px 0 12px;
+  font-size: 20px;
+}
+.wallet-review-dialog {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 30px;
+  max-width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  margin: auto;
+  box-shadow: 0 20px 80px #172b2840;
+}
+.wallet-review-dialog::backdrop {
+  background: #172b2880;
+}
+.wallet-review-dialog h2 {
+  font-size: 24px;
+  margin: 6px 0 16px;
+}
+.wallet-review-dialog p {
+  line-height: 1.7;
+}
+.payment-review-amount {
+  padding: 18px;
+  border-radius: 8px;
+  background: var(--soft-accent);
+  font-size: 20px;
+  font-weight: 650;
+  margin-block: 20px;
+}
+.payment-review-recipient {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.dapp-workspace summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media (max-width: 700px) {
+  .project-chapters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .journey-progress {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .journey-progress li {
+    padding: 10px 12px;
+    border-top: 0;
+    border-left: 3px solid var(--line);
+  }
+  .journey-progress small {
+    display: inline;
+    margin-left: 8px;
+  }
+  .next-action-card {
+    padding: 18px;
+    gap: 12px;
+  }
+  .next-action-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+  }
+  .dapp-workspace .next-action-card h3 {
+    font-size: 18px;
+  }
+  .wallet-review-dialog {
+    padding: 22px;
+  }
+  .wallet-review-dialog .button-row {
+    flex-direction: column-reverse;
+  }
+  .wallet-review-dialog button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

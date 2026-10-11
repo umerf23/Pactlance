@@ -20,7 +20,7 @@ export function PapBuilder({
     onChange({ ...value!, ...patch });
   return (
     <section className="editor-milestone">
-      <h3>Programmable agreement protocol</h3>
+      <h3>Structured work & review rules (PAP)</h3>
       {allowEnable ? (
         <label className="check-label">
           <input
@@ -34,21 +34,22 @@ export function PapBuilder({
               )
             }
           />
-          Use structured PAP terms
+          Enable deliverable checklists, revisions, and review rules
         </label>
       ) : null}
       {!value ? (
         <p className="muted">
-          The existing escrow agreement uses one submission and its fixed
-          on-chain timeout rules.
+          With this option off, each milestone uses one delivery submission and
+          fixed escrow deadlines. Enable it to define evidence formats,
+          revisions, and structured review.
         </p>
       ) : (
         <>
           <p className="notice">
-            PAP executes authenticated rules off-chain. This workflow does not
-            transfer tokens. Payment eligibility requires a compatible escrow
-            adapter. Templates are editable starting points and do not establish
-            legal enforceability.
+            These rules guide delivery and review. Accepting work does not send
+            payment: the client must authorize a separate wallet transaction.
+            Templates are editable starting points and do not establish legal
+            enforceability.
           </p>
           <label>
             Editable work template
@@ -78,7 +79,7 @@ export function PapBuilder({
               </small>
             </label>
             <label>
-              Review timeout
+              If the client review period ends
               <select
                 value={value.reviewTimeout}
                 onChange={(e) =>
@@ -153,10 +154,10 @@ export function PapBuilder({
               });
             return (
               <section className="editor-milestone" key={i}>
-                <h4>Milestone {i + 1} protocol</h4>
+                <h4>Milestone {i + 1} delivery rules</h4>
                 <div className="form-grid">
                   <label>
-                    Review hours
+                    Client review period (hours)
                     <input
                       type="number"
                       min={1}
@@ -168,7 +169,7 @@ export function PapBuilder({
                     />
                   </label>
                   <label>
-                    Permitted revisions
+                    Maximum revision requests
                     <input
                       type="number"
                       min={0}
