@@ -21,9 +21,9 @@ it("runs the rollback-only hosted probe with unchanged permissions before and af
     const files = readdirSync("supabase/migrations")
       .filter((f) => f.endsWith(".sql"))
       .sort();
-    const newest = files.pop();
-    expect(newest).toBe("20261010104341_access_policy_performance.sql");
-    for (const file of files)
+    const newest = "20261010104341_access_policy_performance.sql";
+    expect(files).toContain(newest);
+    for (const file of files.filter((f) => f < newest))
       await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
     const run = async () => {
       const output = await db.exec(
@@ -54,6 +54,9 @@ it("runs the rollback-only hosted probe with unchanged permissions before and af
     };
     const before = await run();
     await db.exec(readFileSync(`supabase/migrations/${newest}`, "utf8"));
+    expect(await run()).toEqual(before);
+    for (const file of files.filter((f) => f > newest))
+      await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
     expect(await run()).toEqual(before);
   } finally {
     await db.close();
