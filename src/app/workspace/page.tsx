@@ -4,12 +4,23 @@ import { projectIdFromLink } from "@/lib/project-links";
 export default async function WorkspacePage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string | string[] }>;
+  searchParams: Promise<{
+    project?: string | string[];
+    role?: string | string[];
+  }>;
 }) {
-  const initialProjectId = projectIdFromLink((await searchParams).project);
+  const params = await searchParams;
+  const initialProjectId = projectIdFromLink(params.project);
+  const initialRole =
+    params.role === "client" || params.role === "freelancer"
+      ? params.role
+      : undefined;
   return (
     <WalletProviders>
-      <Workspace initialProjectId={initialProjectId} />
+      <Workspace
+        initialProjectId={initialProjectId}
+        initialRole={initialRole}
+      />
     </WalletProviders>
   );
 }

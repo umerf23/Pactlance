@@ -21,6 +21,7 @@ import {
 import { formatTokenAmount } from "@/lib/domain";
 import { projectLink } from "@/lib/project-links";
 import { WalletReadiness } from "./wallet-readiness";
+import { NextAction } from "./workspace-guidance";
 const WalletButton = dynamic(
   () =>
     import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -69,8 +70,10 @@ function inputFromDetail(detail: ProjectDetail): AgreementInput {
 }
 export function Workspace({
   initialProjectId = null,
+  initialRole,
 }: {
   initialProjectId?: string | null;
+  initialRole?: "client" | "freelancer";
 }) {
   const {
     publicKey,
@@ -84,7 +87,7 @@ export function Workspace({
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(initialRole ?? "all");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
@@ -365,6 +368,16 @@ export function Workspace({
       setBusy(false);
     }
   }
+  const projectRole =
+    detail?.project.client_wallet === address ? "Client" : "Freelancer";
+  const currentSignatures =
+    detail?.acceptances.filter(
+      (a) =>
+        a.version === detail.agreement.version &&
+        a.commitment === detail.agreement.commitment,
+    ) ?? [];
+  const signedByMe = currentSignatures.some((a) => a.wallet === address);
+  const needsAgreementReview = currentSignatures.length < 2;
   return (
     <div className="live-workspace dapp-workspace">
       <a className="skip-link" href="#main-content">
@@ -387,11 +400,11 @@ export function Workspace({
           </button>
           {detail ? (
             <>
-              <a href="#project-escrow">Escrow</a>
-              <a href="#project-evidence">Evidence</a>
+              <a href="#project-delivery">Work & delivery</a>
+              <a href="#project-payments">Payments</a>
             </>
           ) : null}
-          <Link href="/guide">Payment rules</Link>
+          <Link href="/guide">Help & payment rules</Link>
         </nav>
         <div className="wallet-actions">
           {session?.configured ? <WalletButton /> : null}
@@ -403,13 +416,15 @@ export function Workspace({
             <p className="eyebrow">PACTLANCE / WORKSPACE</p>
             <h1>
               {detail && authenticated
-                ? "Project workspace"
+                ? detail.agreement.terms.title
                 : authenticated
                   ? "Your projects"
-                  : "Milestone payments. On chain."}
+                  : "Get paid for work. Pay with confidence."}
             </h1>
             <p className="subtitle">
-              Agree on terms. Fund one milestone at a time. Settle on Solana.
+              {detail && authenticated
+                ? `You are the ${projectRole.toLowerCase()}. Follow the steps below to agree, deliver, and pay.`
+                : "Create an agreement, share it with your client or freelancer, and follow each milestone to payment."}
             </p>
           </div>
           <div className="workspace-hero-note">
@@ -471,10 +486,10 @@ export function Workspace({
               ↗
             </span>
             <p className="eyebrow">WALLET AUTHENTICATION</p>
-            <h2>Connect. Verify. Get to work.</h2>
+            <h2>Open your workspace</h2>
             <p>
-              First connect a Solana wallet, then sign a message to verify
-              ownership. Connecting alone does not sign you in.
+              Your wallet is your account. Connect it, then approve a sign-in
+              message. This verifies your identity and does not send payment.
             </p>
             {initialProjectId ? (
               <p className="notice">
@@ -484,12 +499,14 @@ export function Workspace({
             ) : null}
             <ol className="onboarding-steps">
               <li>
-                Connect a compatible Solana wallet using the button above.
+                Choose your wallet using the Connect wallet button at the top.
               </li>
               <li>
-                Sign the ownership message. This sign-in does not pay anyone.
+                Click Sign in below and approve the message in your wallet.
               </li>
-              <li>Create an agreement or open the project shared with you.</li>
+              <li>
+                Create a project, or open the private link shared with you.
+              </li>
             </ol>
             {session.user ? (
               <p className="notice">
@@ -541,6 +558,7 @@ export function Workspace({
                     : "create"
                 }
                 wallet={session.user.wallet}
+                defaultRole={filter === "client" ? "client" : "freelancer"}
                 initial={
                   editing && detail ? inputFromDetail(detail) : undefined
                 }
@@ -552,11 +570,67 @@ export function Workspace({
               />
             ) : detail ? (
               <>
-                <section className="workspace-card project-sharing">
+                <NextAction
+                  role={projectRole}
+                  title={
+                    needsAgreementReview
+                      ? signedByMe
+                        ? "Waiting for the other person to accept"
+                        : "Review and accept your agreement"
+                      : "Your agreement is signed — follow your milestone below"
+                  }
+                >
+                  <p>
+                    {needsAgreementReview
+                      ? signedByMe
+                        ? "You have signed this version. Share the project link so the other person can review and sign with their own wallet."
+                        : "Check the scope, amount, deadlines, and reviewers. Accepting records consent; payment is separate."
+                      : "Work & delivery shows what needs to be done. Payments shows where funds are and who needs to authorize the next transaction."}
+                  </p>
+                  <a
+                    className="primary compact"
+                    href={
+                      needsAgreementReview
+                        ? signedByMe
+                          ? "#project-sharing"
+                          : "#project-agreement"
+                        : "#project-delivery"
+                    }
+                  >
+                    {needsAgreementReview
+                      ? signedByMe
+                        ? "Share project link"
+                        : "Review agreement"
+                      : "Go to current milestone"}
+                  </a>
+                </NextAction>
+                <nav className="project-chapters" aria-label="Project sections">
+                  <a href="#project-agreement">
+                    <span>01</span> Agreement
+                  </a>
+                  <a href="#project-delivery">
+                    <span>02</span> Work & delivery
+                  </a>
+                  <a href="#project-payments">
+                    <span>03</span> Payments
+                  </a>
+                  <a href="#project-activity">
+                    <span>04</span> Activity
+                  </a>
+                </nav>
+                <details
+                  id="project-sharing"
+                  className="workspace-card feature-section project-sharing"
+                  open={needsAgreementReview}
+                >
+                  <summary>
+                    Invite your client or freelancer{" "}
+                    <span>Private project link</span>
+                  </summary>
                   <div className="workspace-heading">
                     <div>
                       <p className="eyebrow">PRIVATE PROJECT</p>
-                      <h2>Bring the other participant into this agreement</h2>
+                      <h2>Share this project</h2>
                     </div>
                     <button className="secondary" onClick={shareProject}>
                       Copy project link
@@ -584,32 +658,49 @@ export function Workspace({
                   </label>
                   <p role="status">{shareNotice}</p>
                   <div className="operational-actions">
-                    <a className="secondary" href="#project-escrow">
-                      {detail.agreement.terms.protocol
-                        ? "Agreement execution"
-                        : "Payment actions"}
+                    <a className="secondary" href="#project-payments">
+                      Payments
                     </a>
                     <a className="secondary" href="#project-evidence">
-                      Delivery evidence
+                      Work files & evidence
                     </a>
                     <Link className="text-button" href="/guide">
                       Understand the rules
                     </Link>
                   </div>
-                </section>
-                <AgreementView
-                  key={`${detail.project.id}-${detail.project.current_version}`}
-                  detail={detail}
-                  wallet={session.user.wallet}
-                  onAccept={accept}
-                  onEdit={() => setEditing(true)}
-                  onBack={closeProject}
-                />
+                </details>
+                <details
+                  id="project-agreement"
+                  className="feature-section agreement-section"
+                  open={needsAgreementReview}
+                >
+                  <summary>
+                    Agreement & terms{" "}
+                    <span>
+                      {currentSignatures.length}/2 people accepted · version{" "}
+                      {detail.agreement.version}
+                    </span>
+                  </summary>
+                  <AgreementView
+                    key={`${detail.project.id}-${detail.project.current_version}`}
+                    detail={detail}
+                    wallet={session.user.wallet}
+                    onAccept={accept}
+                    onEdit={() => setEditing(true)}
+                    onBack={closeProject}
+                  />
+                </details>
                 {!detail.agreement.terms.protocol ? (
                   <>
-                    <section id="project-evidence" className="workspace-card">
+                    <section id="project-delivery" className="workspace-card">
+                      <h2>Work & delivery</h2>
+                      <p>
+                        Save files or links below. The freelancer then records
+                        delivery in Payments to start review.
+                      </p>
+                      <div id="project-evidence" />
                       <label>
-                        Milestone evidence
+                        Choose a milestone
                         <select
                           value={Math.min(
                             evidenceIndex,
@@ -747,16 +838,16 @@ export function Workspace({
                             </small>
                           </span>
                         </span>
-                        <span>Review agreement ↗</span>
+                        <span>Open project →</span>
                       </button>
                     ))
                   ) : (
                     <div className="empty-state">
                       <h3>No projects in this view yet.</h3>
                       <p>
-                        Create your first agreement with a counterparty’s wallet
-                        address. Both participants will see it when they sign
-                        in.
+                        Start as a client or freelancer. You will need the other
+                        person’s wallet, work requirements, payment amount,
+                        deadlines, and two agreed reviewers.
                       </p>
                     </div>
                   )}
@@ -765,8 +856,10 @@ export function Workspace({
                   key={session.user.wallet}
                   wallet={session.user.wallet}
                 />
-                <section className="workspace-card">
-                  <h2>Your profile</h2>
+                <details className="workspace-card feature-section">
+                  <summary>
+                    Your profile <span>Display name</span>
+                  </summary>
                   <label>
                     Display name
                     <input
@@ -783,7 +876,7 @@ export function Workspace({
                     Save display name
                   </button>
                   <p role="status">{profileNotice}</p>
-                </section>
+                </details>
               </>
             )}
           </>

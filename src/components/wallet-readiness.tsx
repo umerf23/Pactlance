@@ -50,7 +50,7 @@ export function WalletReadiness({ wallet }: { wallet: string }) {
   const balances = result?.wallet === wallet ? result : null;
   return (
     <details className="workspace-card wallet-readiness">
-      <summary>Wallet and funding checklist</summary>
+      <summary>Check wallet balance & test-token setup</summary>
       {!signTransaction ? (
         <p role="alert">
           This wallet cannot sign Solana transactions. Connect a compatible
@@ -82,7 +82,7 @@ export function WalletReadiness({ wallet }: { wallet: string }) {
               </dd>
             </div>
             <div>
-              <dt>Configured TEST token</dt>
+              <dt>TEST available for payment</dt>
               <dd>{formatTokenAmount(balances.tokenUnits)} TEST</dd>
             </div>
           </dl>
@@ -113,7 +113,7 @@ export function WalletReadiness({ wallet }: { wallet: string }) {
         disabled={checking || !mint}
         onClick={() => setRefresh((n) => n + 1)}
       >
-        Recheck balances
+        Refresh balances
       </button>
     </details>
   );

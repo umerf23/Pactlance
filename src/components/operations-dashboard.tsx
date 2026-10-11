@@ -13,6 +13,7 @@ import {
 } from "@/lib/operations/model";
 import type { OperationalHealth } from "@/lib/operations/server/health";
 import type { AgreementTerms } from "@/lib/agreements/schema";
+import { formatTokenAmount } from "@/lib/domain";
 interface Operations {
   milestones: MilestoneCache[];
   transactions: TransactionEvent[];
@@ -120,7 +121,7 @@ export function OperationsDashboard({
         a.version === selected.agreement_version,
     );
   return (
-    <section className="workspace-card">
+    <section id="project-activity" className="workspace-card">
       {!projectId ? <PapReviewer wallet={wallet} /> : null}
       <div className="workspace-heading">
         <h2>Activity and reminders</h2>
@@ -138,7 +139,7 @@ export function OperationsDashboard({
         <>
           <p className="muted">
             {data.chainConfigured
-              ? "Chain activity appears after verified reconciliation."
+              ? "Payment activity appears after the transaction has been verified. Refresh Payments first if an action has just completed."
               : "Escrow is not connected on this deployment. Funding and settlement history will appear after chain integration."}
           </p>
           {data.notices.map((n) => (
@@ -158,7 +159,15 @@ export function OperationsDashboard({
               key={`${m.project_id}:${m.milestone_index}`}
             >
               <strong>
-                Milestone {m.milestone_index + 1} · {m.state}
+                Milestone {m.milestone_index + 1} ·{" "}
+                {
+                  {
+                    funded: "Payment funded",
+                    submitted: "Delivery recorded",
+                    disputed: "Dispute open",
+                    settled: "Payment settled",
+                  }[m.state]
+                }
               </strong>
               <small>
                 {freshCache(m, now)
@@ -178,15 +187,69 @@ export function OperationsDashboard({
                 key={`${t.signature}:${t.event_kind}`}
               >
                 <span>
-                  {t.event_kind} · {t.status} · {t.network ?? "devnet"}
+                  <strong>
+                    {(
+                      {
+                        create_project: "Payment escrow created",
+                        create_pap_project: "Payment escrow created",
+                        accept_project: "Payment terms confirmed",
+                        fund_milestone: "Milestone funded",
+                        submit_delivery: "Delivery submitted",
+                        submit_pap_delivery: "Validated delivery recorded",
+                        approve_milestone: "Payment approved",
+                        approve_pap_milestone: "Payment approved",
+                        propose_settlement: "Payment split proposed",
+                        accept_settlement: "Payment split accepted",
+                        execute_settlement: "Agreed split sent",
+                        open_dispute: "Dispute opened",
+                        resolve_dispute: "Dispute resolved",
+                        refund_milestone: "Refund requested",
+                        claim_milestone: "Deadline payment requested",
+                      } as Record<string, string>
+                    )[t.event_kind] ?? t.event_kind.replaceAll("_", " ")}
+                  </strong>
+                  {" · "}
+                  {t.status === "finalized" ? "Confirmed on chain" : t.status}
+                  {" · "}
+                  {t.network ?? "devnet"}
                 </span>
-                <small>
-                  Obligation: {t.amount_units ?? "—"} TEST base units. Client:{" "}
-                  {t.client_recipient ?? "—"}; freelancer:{" "}
-                  {t.freelancer_recipient ?? "—"}.{" "}
-                  {t.client_amount_units != null &&
-                    `Actual split: ${t.client_amount_units} / ${t.freelancer_amount_units}.`}
-                </small>
+                {t.client_amount_units != null &&
+                t.freelancer_amount_units != null ? (
+                  <p>
+                    Client refund:{" "}
+                    {formatTokenAmount(BigInt(t.client_amount_units))} TEST ·
+                    Freelancer payment:{" "}
+                    {formatTokenAmount(BigInt(t.freelancer_amount_units))} TEST
+                  </p>
+                ) : t.amount_units != null && BigInt(t.amount_units) > 0n ? (
+                  <p>
+                    Milestone amount:{" "}
+                    {formatTokenAmount(BigInt(t.amount_units))} TEST
+                  </p>
+                ) : null}
+                <details className="technical-details">
+                  <summary>Transaction details</summary>
+                  <small>
+                    Event: {t.event_kind} · Status: {t.status} · Slot:{" "}
+                    {t.slot ?? "pending"}
+                    <br />
+                    Obligation: {t.amount_units ?? "—"} TEST base units.
+                    <br />
+                    Client wallet: {t.client_recipient ?? "—"}
+                    <br />
+                    Freelancer wallet: {t.freelancer_recipient ?? "—"}
+                    <br />
+                    Signature: {t.signature}
+                    {t.client_amount_units != null ? (
+                      <>
+                        <br />
+                        Actual split in base units: {
+                          t.client_amount_units
+                        } / {t.freelancer_amount_units}
+                      </>
+                    ) : null}
+                  </small>
+                </details>
                 {explorerURL(t.signature) && (
                   <a
                     href={explorerURL(t.signature)!}

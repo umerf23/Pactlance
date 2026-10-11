@@ -46,11 +46,11 @@ export function AgreementView({
           ← All projects
         </button>
         <span className="outline-pill">
-          {signatures.length}/2 off-chain signatures · v{version}
+          {signatures.length}/2 people accepted · version {version}
         </span>
       </div>
       <p className="eyebrow">AGREEMENT REVIEW</p>
-      <h1>{terms.title}</h1>
+      <h2>{terms.title}</h2>
       <p className="scope-text">{terms.scope}</p>
       <label>
         Agreement version
@@ -86,8 +86,8 @@ export function AgreementView({
             {role === "Client" || role === "Freelancer" ? (
               <small>
                 {signatures.some((s) => s.wallet === key)
-                  ? "Signed this version"
-                  : "Awaiting signature"}
+                  ? "Accepted this version"
+                  : "Has not accepted yet"}
               </small>
             ) : null}
           </div>
@@ -108,11 +108,11 @@ export function AgreementView({
           <dl className="term-list">
             <div>
               <dt>Funding closes</dt>
-              <dd>{m.fundingDeadline}</dd>
+              <dd>{new Date(m.fundingDeadline).toLocaleString()}</dd>
             </div>
             <div>
               <dt>Delivery due</dt>
-              <dd>{m.deliveryDeadline}</dd>
+              <dd>{new Date(m.deliveryDeadline).toLocaleString()}</dd>
             </div>
             <div>
               <dt>Sequence</dt>
@@ -178,22 +178,25 @@ export function AgreementView({
           </ul>
         </>
       )}
-      <div className="commitment">
-        <strong>Agreement fingerprint · SHA-256</strong>
-        <code>{record.commitment}</code>
-        <small>
-          Generated from the complete versioned terms and a private salt.
-          Verified again before signing.
-        </small>
-      </div>
+      <details className="technical-details">
+        <summary>Agreement verification fingerprint</summary>
+        <div className="commitment">
+          <strong>Agreement fingerprint · SHA-256</strong>
+          <code>{record.commitment}</code>
+          <small>
+            Generated from the complete versioned terms and a private salt.
+            Verified again before signing.
+          </small>
+        </div>
+      </details>
       <p className="notice">
         {terms.protocol ? (
-          "Both wallet signatures record consent to this version. Activation is separate; off-chain rule execution does not authorize token transfers."
+          "Accepting records your consent. Both people must accept, then activate the agreed version in Work & delivery. Funding and payment require separate wallet transactions."
         ) : (
           <>
-            This document signature records off-chain acceptance and makes no
-            deposit. In Payment actions, both participants must also accept the
-            terms bound to the deployed program and TEST mint before funding.
+            Accepting records consent and makes no deposit. In Payments, both
+            people also confirm the escrow payment terms before the client adds
+            funds.
           </>
         )}
       </p>
@@ -211,7 +214,7 @@ export function AgreementView({
           <button className="primary" disabled={!ack || busy} onClick={accept}>
             {busy
               ? "Waiting for wallet signature…"
-              : "Sign and accept this version"}
+              : "Accept agreement in wallet"}
           </button>
         </>
       ) : (
@@ -219,7 +222,7 @@ export function AgreementView({
           {!current
             ? "Select the latest proposal to sign. Earlier PAP terms remain active until a jointly signed amendment is activated."
             : mine
-              ? "Your signed acceptance is recorded for this version."
+              ? "You have accepted this version. Continue to Work & delivery and Payments."
               : "This project is locked against changes."}
         </p>
       )}
@@ -233,7 +236,7 @@ export function AgreementView({
         disabled={busy || !current || detail.project.locked}
         onClick={onEdit}
       >
-        Propose revised terms
+        Propose changes to the agreement
       </button>
       <p className="muted">
         A new version preserves this history and requires two new signatures.
